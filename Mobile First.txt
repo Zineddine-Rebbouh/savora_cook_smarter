@@ -9,7 +9,7 @@ Savora — Full Design Prompt Document
 Complete Brief for Claude Design to Build the App
 
 SECTION 1 — PRODUCT IDENTITY & BRAND PHILOSOPHY
-App Name: Savora
+App Name: SavoraSavora
 Tagline: Cook smarter. Waste less. Eat better.
 Design Movement Name: "Culinary Modernism"
 Philosophy:

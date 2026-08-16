@@ -19,3 +19,18 @@ coverage/
 node_modules/
 .DS_Store
 
+# Expo / React Native
+android/
+ios/
+.expo/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Local tooling artifacts
+.claude/
+npm-peer.json
+

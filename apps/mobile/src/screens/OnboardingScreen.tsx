@@ -1,0 +1,225 @@
+import { Feather } from '@expo/vector-icons';
+import { useRef, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import type { AppTheme } from '../theme';
+
+type OnboardingScreenProps = {
+  onFinish: () => void;
+  theme: AppTheme;
+};
+
+const slides = [
+  {
+    key: 'slide-1',
+    title: 'Hands-free gesture cooking',
+    subtitle: 'Your kitchen should adapt to your hands, not the other way around.',
+    icon: 'repeat',
+  },
+  {
+    key: 'slide-2',
+    title: 'Import any recipe instantly',
+    subtitle: 'Paste a URL and Savora structures the ingredients, steps, and timing.',
+    icon: 'link',
+  },
+  {
+    key: 'slide-3',
+    title: 'Cook with confidence',
+    subtitle: 'Wake-lock cooking mode keeps the screen ready when your hands are full.',
+    icon: 'clock',
+  },
+];
+
+export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
+  const styles = createStyles(theme);
+  const [index, setIndex] = useState(0);
+  const { width } = useWindowDimensions();
+  const scrollRef = useRef<FlatList<any>>(null);
+
+  return (
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      <View style={styles.heroShell}>
+        <View style={styles.heroContent}>
+          <View style={styles.logoShell}>
+            <Text style={styles.logo}>S</Text>
+          </View>
+          <Text style={styles.appName}>Savora</Text>
+          <Text style={styles.tagline}>Cook smarter. Waste less. Eat better.</Text>
+        </View>
+      </View>
+
+      <View style={styles.carouselShell}>
+        <FlatList
+          data={slides}
+          horizontal
+          pagingEnabled
+          ref={scrollRef}
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item) => item.key}
+          onMomentumScrollEnd={(event) => {
+            const newIndex = Math.round(
+              event.nativeEvent.contentOffset.x / width,
+            );
+            setIndex(newIndex);
+          }}
+          renderItem={({ item }) => (
+            <View style={[styles.slide, { width }]}>
+              <View style={styles.illustrationShell}>
+                <Feather color={theme.colors.accentSecondary} name={item.icon} size={48} />
+              </View>
+              <Text style={styles.slideTitle}>{item.title}</Text>
+              <Text style={styles.slideText}>{item.subtitle}</Text>
+            </View>
+          )}
+        />
+      </View>
+
+      <View style={styles.footer}>
+        <View style={styles.dotsRow}>
+          {slides.map((_, slideIndex) => (
+            <View
+              key={slideIndex}
+              style={[
+                styles.dot,
+                slideIndex === index && styles.dotActive,
+              ]}
+            />
+          ))}
+        </View>
+        <Pressable style={styles.ctaButton} onPress={onFinish}>
+          <Text style={styles.ctaText}>Get Started</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function createStyles(theme: AppTheme) {
+  const { colors, fonts, radius, spacing } = theme;
+
+  return StyleSheet.create({
+    safeArea: {
+      backgroundColor: colors.bgPrimary,
+      flex: 1,
+    },
+    heroShell: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceCard,
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: spacing[5],
+    },
+    heroContent: {
+      alignItems: 'center',
+      gap: spacing[3],
+      marginTop: spacing[8],
+    },
+    logoShell: {
+      alignItems: 'center',
+      backgroundColor: colors.bgDark,
+      borderRadius: radius.xl,
+      height: 96,
+      justifyContent: 'center',
+      width: 96,
+    },
+    logo: {
+      color: colors.textInverse,
+      fontFamily: fonts.displayBold,
+      fontSize: 42,
+      lineHeight: 50,
+    },
+    appName: {
+      color: colors.textPrimary,
+      fontFamily: fonts.displayLight,
+      fontSize: 42,
+      lineHeight: 50,
+      marginTop: spacing[4],
+    },
+    tagline: {
+      color: colors.textTertiary,
+      fontFamily: fonts.body,
+      fontSize: 15,
+      lineHeight: 22,
+      marginTop: spacing[2],
+      textAlign: 'center',
+      maxWidth: 280,
+    },
+    carouselShell: {
+      flex: 1,
+    },
+    slide: {
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: spacing[5],
+    },
+    illustrationShell: {
+      alignItems: 'center',
+      backgroundColor: colors.bgSecondary,
+      borderRadius: radius.xl,
+      height: 220,
+      justifyContent: 'center',
+      marginBottom: spacing[6],
+      width: '100%',
+    },
+    slideTitle: {
+      color: colors.textPrimary,
+      fontFamily: fonts.displaySemiBold,
+      fontSize: 32,
+      lineHeight: 40,
+      marginBottom: spacing[3],
+      textAlign: 'center',
+    },
+    slideText: {
+      color: colors.textSecondary,
+      fontFamily: fonts.body,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+      maxWidth: 320,
+    },
+    footer: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceCard,
+      paddingBottom: spacing[8],
+      paddingTop: spacing[4],
+    },
+    dotsRow: {
+      flexDirection: 'row',
+      gap: spacing[3],
+      marginBottom: spacing[6],
+    },
+    dot: {
+      backgroundColor: colors.bgTertiary,
+      borderRadius: radius.pill,
+      height: 10,
+      width: 10,
+    },
+    dotActive: {
+      backgroundColor: colors.accentPrimary,
+      width: 24,
+    },
+    ctaButton: {
+      alignItems: 'center',
+      backgroundColor: colors.accentPrimary,
+      borderRadius: radius.xl,
+      height: 52,
+      justifyContent: 'center',
+      width: '90%',
+    },
+    ctaText: {
+      color: colors.textInverse,
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+  });
+}
