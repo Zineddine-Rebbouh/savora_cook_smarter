@@ -1,0 +1,726 @@
+Mobile First — Here's Why, Definitively
+Build mobile first. No debate. Here is the reasoning across every axis:
+The killer features that make Savora differentiated — hands-free gesture cooking, camera OCR, voice dictation, pantry scanner, and wake-lock cooking mode — are all physically impossible on a web app. If you build web first, you're building a worse version of a product that has no competitive advantage. Every hour on a web MVP is an hour spent building the version that doesn't win.
+You already have Flutter in your stack from Tawfir. You are not starting from zero. The backend (Django + DRF + Channels) is identical regardless of which client you build first, so your real question is only about the client — and Flutter gives you iOS + Android simultaneously.
+The web app comes later as a companion: a recipe importer browser extension, a landing page, and an account management portal. That's its role. The mobile app is the product.
+Start order within mobile: Build Android first (faster iteration cycle, no Apple developer account friction, you can sideload APKs for demos), then submit to both stores simultaneously when you're ready.
+
+Savora — Full Design Prompt Document
+Complete Brief for Claude Design to Build the App
+
+SECTION 1 — PRODUCT IDENTITY & BRAND PHILOSOPHY
+App Name: Savora
+Tagline: Cook smarter. Waste less. Eat better.
+Design Movement Name: "Culinary Modernism"
+Philosophy:
+Savora sits at the intersection of warm human ritual and cold machine intelligence. The visual language must never feel clinical or sterile like a health-tracking app, nor rustic and artisanal like a food blog. It occupies a third space: warm precision. The kind of kitchen that has beautiful wooden countertops, a Le Creuset Dutch oven, and a Raspberry Pi running on the shelf.
+Every surface breathes. Generous white space is the primary design element — not because of minimalism as a trend, but because cooking is already visually chaotic, and the app must be the calm in that storm. When a user's hands are covered in flour, the interface must be readable at a glance from 60cm away.
+The color system is built around earth tones elevated by one sharp modern accent. Think warm cream backgrounds, deep espresso text, terracotta mid-tones — then a single electric green or saffron accent that signals AI intelligence without screaming "tech startup."
+Typography is the soul of the app. Display text should feel editorial — like a high-end food magazine, not a recipe card website. Body text must be supremely readable in low kitchen light.
+
+SECTION 2 — DESIGN SYSTEM SPECIFICATION
+2.1 Color Palette
+BACKGROUND SYSTEM
+--bg-primary:        #FEFCF7   /* warm off-white, cream base */
+--bg-secondary:      #F5F0E8   /* slightly deeper cream for cards */
+--bg-tertiary:       #EDE6D6   /* section dividers, inactive states */
+--bg-dark:           #1C1814   /* deep espresso, used for cooking mode */
+--bg-dark-secondary: #2A2420   /* card surfaces on dark screens */
+
+TEXT SYSTEM
+--text-primary:      #1C1814   /* near-black, espresso */
+--text-secondary:    #6B5E52   /* warm medium brown */
+--text-tertiary:     #9C8B7E   /* muted captions */
+--text-inverse:      #FEFCF7   /* text on dark backgrounds */
+
+ACCENT SYSTEM
+--accent-primary:    #E8854A   /* saffron-terracotta, primary CTA */
+--accent-secondary:  #3DBE6C   /* electric sage, AI/smart features */
+--accent-danger:     #D94F3D   /* errors, allergen warnings */
+--accent-warning:    #F2C94C   /* expiry alerts, timers */
+
+SURFACE SYSTEM
+--surface-card:      #FFFFFF   /* pure white recipe cards */
+--surface-elevated:  #FFFFFF   /* modals, bottom sheets */
+--border-subtle:     #E8E0D0   /* card borders, dividers */
+--border-strong:     #C8BDB0   /* input borders, separators */
+
+AI FEATURE TINT (for smart features badge, substitution engine, etc.)
+--ai-bg:             #EDF9F2   /* light sage tint */
+--ai-border:         #3DBE6C   /* sage border */
+--ai-text:           #1A6640   /* dark green text on ai-bg */
+2.2 Typography System
+DISPLAY / HEADINGS
+Font: "Fraunces" (Google Fonts — a quirky optical serif designed for food and 
+      editorial contexts, has three optical axes: wonky, softness, weight)
+Weight: 300–700 range available
+Use: Screen titles, recipe names, hero text
+Why: Fraunces has the warmth of a cookbook but the sharpness of a magazine. 
+     It feels designed, not default.
+
+BODY / UI TEXT  
+Font: "DM Sans" (Google Fonts — geometric but warm, excellent at small sizes)
+Weight: 400 (regular), 500 (medium), 600 (semibold)
+Use: All body copy, labels, navigation, buttons
+Why: DM Sans pairs beautifully with Fraunces — one is old-world editorial, 
+     one is clean modern UI. The contrast creates hierarchy instantly.
+
+NUMERIC / MEASUREMENTS
+Font: "DM Mono" (the monospace sibling of DM Sans)
+Use: Ingredient quantities, timers, nutritional values, cooking temperatures
+Why: Monospace for numbers creates visual alignment in lists and prevents 
+     layout shift when numbers change (timers counting down).
+
+SCALE
+--text-xs:    11px / 14px line-height   (legal, captions)
+--text-sm:    13px / 18px              (metadata, tags)
+--text-base:  15px / 22px              (body, lists)
+--text-md:    17px / 24px              (UI labels, card descriptions)
+--text-lg:    20px / 28px              (section headers)
+--text-xl:    24px / 32px              (screen titles)
+--text-2xl:   32px / 40px              (recipe hero names)
+--text-3xl:   42px / 50px              (cooking mode step text)
+--text-display: 56px / 62px            (empty states, onboarding)
+2.3 Spacing System (8dp Grid)
+--space-1:  4px    (icon padding, tight internal spacing)
+--space-2:  8px    (between inline elements)
+--space-3:  12px   (component internal padding)
+--space-4:  16px   (standard component padding, card inner)
+--space-5:  20px   (section inner spacing)
+--space-6:  24px   (between components)
+--space-8:  32px   (section separation)
+--space-10: 40px   (major layout sections)
+--space-12: 48px   (bottom nav height zone)
+--space-16: 64px   (hero spacing)
+
+Horizontal screen margins: 20px (phone), 32px (tablet)
+Card border radius: 16px (standard), 24px (large cards), 8px (chips/tags)
+Button border radius: 12px (standard), 100px (pill buttons for primary CTA)
+2.4 Elevation & Shadow
+LIGHT MODE
+--shadow-sm:  0 1px 3px rgba(28, 24, 20, 0.06), 0 1px 2px rgba(28, 24, 20, 0.04)
+--shadow-md:  0 4px 12px rgba(28, 24, 20, 0.08), 0 2px 4px rgba(28, 24, 20, 0.04)
+--shadow-lg:  0 8px 24px rgba(28, 24, 20, 0.12), 0 4px 8px rgba(28, 24, 20, 0.06)
+--shadow-xl:  0 16px 48px rgba(28, 24, 20, 0.16), 0 8px 16px rgba(28, 24, 20, 0.08)
+
+DARK MODE (cooking screen)
+--shadow-glow: 0 0 24px rgba(232, 133, 74, 0.15)   /* warm accent glow */
+2.5 Animation Tokens
+--duration-instant:  80ms    (press feedback)
+--duration-fast:     150ms   (micro-interactions, state changes)
+--duration-normal:   250ms   (page transitions, expansions)
+--duration-slow:     400ms   (bottom sheet entrance, modal appear)
+--duration-crawl:    600ms   (onboarding, hero transitions)
+
+--ease-standard:  cubic-bezier(0.4, 0.0, 0.2, 1)   (Material standard)
+--ease-decelerate: cubic-bezier(0.0, 0.0, 0.2, 1)  (entering elements)
+--ease-accelerate: cubic-bezier(0.4, 0.0, 1.0, 1)  (exiting elements)
+--ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1) (bouncy reveals, cards)
+
+SECTION 3 — SCREEN-BY-SCREEN DESIGN BRIEF
+Design all screens in both light mode and dark mode. Frame all mobile screens at 390×844px (iPhone 15 standard). Include safe area zones.
+
+SCREEN 1 — Onboarding / Splash Sequence (3 screens)
+Screen 1a — Splash
+
+Full bleed background: --bg-dark (#1C1814)
+Centered: App logo (a stylized "S" formed from a spoon curve — not literal, abstract and geometric)
+Below logo: "Savora" in Fraunces 300 weight, --text-inverse, 42px
+Below name: tagline "Cook smarter. Waste less. Eat better." in DM Sans, --text-tertiary, 15px
+Subtle grain texture overlay at 4% opacity on background
+Animation: Logo scales from 0.8→1 with ease-spring, text fades in 200ms later
+
+Screen 1b — Value Prop Carousel (3 slides)
+
+Light mode. Background --bg-primary.
+Top 55% of screen: large illustration area (describe each as what it should show)
+
+Slide 1: A hand pasting a URL, with a structured recipe card materializing (parser feature)
+Slide 2: A pantry grid of ingredient chips, with "Cook Now" recipes appearing (zero-waste)
+Slide 3: A hands-free cooking step in full-screen dark mode (cooking experience)
+
+
+Bottom 45%: feature title in Fraunces 32px, description in DM Sans 15px, progress dots
+Primary CTA pill button: "Get Started" in --accent-primary background
+Skip link top-right in --text-tertiary
+
+Screen 1c — Account Setup
+
+Minimal form: email + password OR "Continue with Google" / "Continue with Apple"
+Dietary preferences multi-select (chips): Vegetarian, Vegan, Gluten-Free, Dairy-Free, Halal, Keto, None
+Subtle note: "Set these now, skip forever" — reduce friction
+CTA: "Create My Cookbook" (not "Sign Up" — sounds like work)
+
+
+SCREEN 2 — Home / Discovery Feed
+Overall layout: Bottom tab navigation with 5 tabs.
+Bottom Navigation:
+[Home icon]   [Search icon]   [+ Add]   [Pantry icon]   [Profile icon]
+  Home          Discover       (FAB)       Pantry          Profile
+The center "+" tab is a Floating Action Button elevated above the nav bar, in --accent-primary, with a soft shadow. It is the primary import action.
+Home Screen Structure (top to bottom):
+HEADER ZONE (sticky)
+  Left:  "Good morning, Zine 👋" in DM Sans 13px, --text-secondary
+         "What are we cooking today?" in Fraunces 22px, --text-primary
+  Right: Avatar circle (profile photo or initials), notification bell with badge
+
+COOK NOW STRIP (horizontal scroll)
+  Section label: "Ready to Cook" + "4 recipes" badge in --ai-bg
+  Cards: Compact horizontal scroll recipe cards
+  Card anatomy:
+    - 100×100px food photo (rounded 16px, left side)
+    - Recipe name in DM Sans semibold 15px
+    - "✓ All ingredients in pantry" in --accent-secondary 11px
+    - Time chip: "25 min" 
+    - Pantry match: filled progress bar in --accent-secondary
+
+PERSONALIZED FEED (vertical scroll, primary content)
+  Section label: "For You" — based on your tastes
+  Card type: Large recipe cards, full-width, 220px height
+  Card anatomy:
+    - Full-bleed food photo top half
+    - Gradient overlay bottom: transparent → --bg-dark at 80%
+    - White text overlay: recipe name in Fraunces 20px
+    - Bottom row: cuisine tag chip, time, difficulty dots, pantry match %
+    - Save bookmark icon top-right on photo
+    - If AI-recommended: small green "Savora Pick" badge top-left
+
+TRENDING COLLECTIONS (horizontal scroll)
+  Section label: "Popular Collections"
+  Circular collection thumbnails with collection name below
+  Examples: "30-min meals", "High Protein", "Algerian Classics"
+
+RECENTLY ADDED (horizontal scroll)
+  Section label: "Your Recently Saved"
+  Compact horizontal cards showing the user's last 8 imports
+
+SCREEN 3 — Recipe Detail Page
+This is the most important screen. It must feel like a premium food magazine spread.
+Header:
+
+Full-bleed food photograph, height 340px (40% of screen)
+Top safe area: Back arrow (left) + Share + Save icons (right), on semi-transparent dark scrim
+Bottom of image: gradient overlay with recipe title in Fraunces 28px white, source attribution below in DM Sans 13px
+
+Content (scrolls beneath the image):
+QUICK STATS ROW
+  Four equal-width chips in a horizontal row:
+  [ 🕐 Prep 15m ] [ 🍳 Cook 30m ] [ 👤 4 serves ] [ ⚡ Med difficulty ]
+
+ACTION BUTTONS ROW
+  Primary: "Start Cooking" pill button — full width, --accent-primary
+  Secondary row: "Scale Recipe" | "Add to Plan" | "Share"
+
+PANTRY INTELLIGENCE BANNER
+  If missing ingredients: amber banner with list of missing items
+  "You have 6 of 8 ingredients" — progress bar
+  Missing items listed as chips: each has a "Substitute?" button
+  Substitute flow: taps open a bottom sheet with LLM-generated suggestion
+
+INGREDIENTS SECTION
+  Header: "Ingredients" + serving count stepper (- 4 +)
+  When stepper changes, quantities recalculate with a number-flip animation
+  Each ingredient row:
+    Left: quantity in DM Mono 15px semibold, unit in DM Mono 13px regular
+    Center: ingredient name in DM Sans 15px
+    Right: pantry check indicator (green check if in pantry, grey if not)
+    Long press: reveals "Substitute" and "Add to Pantry" options
+
+STEPS SECTION
+  Header: "Instructions" + step count
+  Each step: numbered circle (--accent-primary bg) + instruction text
+  If step contains a time: inline timer chip appears automatically
+    "Simmer for 12 minutes" → chip "⏱ 12 min — Start"
+  Sub-recipe steps: if ingredient links to another recipe, chip appears
+    "Mushroom Duxelles →" opens a slide-over panel
+
+NUTRITIONAL SUMMARY (collapsible)
+  Macro bar chart: Protein / Carbs / Fat as colored horizontal segments
+  Per-serving values in DM Mono
+
+COOK LOG / REVIEWS
+  "You cooked this 3 times" — personal history
+  Community ratings and photo logs below
+
+SCREEN 4 — Recipe Import (FAB Flow)
+This opens when the user taps the center "+" FAB.
+Bottom Sheet — Import Method Selector:
+Sheet rises from bottom, 60% screen height, rounded top corners 24px
+Background: --surface-elevated (white)
+Drag handle at top
+
+Title: "Add a Recipe" in Fraunces 24px
+
+Four large option cards (2×2 grid):
+┌─────────────────┐ ┌─────────────────┐
+│  🔗             │ │  📷             │
+│  Paste URL      │ │  Scan Photo     │
+│  Any food blog  │ │  Cookbook / OCR │
+└─────────────────┘ └─────────────────┘
+┌─────────────────┐ ┌─────────────────┐
+│  🎙️             │ │  ✏️             │
+│  Speak Recipe   │ │  Type Manually  │
+│  Voice dictate  │ │  Custom entry   │
+└─────────────────┘ └─────────────────┘
+
+Each card: icon + title + subtitle, --bg-secondary background, 
+           border --border-subtle, tap → scale ripple feedback
+URL Import State Machine (design all 4 states):
+STATE 1 — INPUT
+  Full screen modal (not bottom sheet — this needs focus)
+  Large text field for URL paste
+  Paste button auto-detects clipboard URL and fills field
+  "Import" CTA button below
+  Recent: "Last imported from..." recent source chips
+
+STATE 2 — PROCESSING (3–8 seconds)
+  Animated progress: three phases with descriptive labels
+  Phase 1: "Fetching page..."     → thin progress bar pulses
+  Phase 2: "Reading recipe..."    → progress bar fills to 60%
+  Phase 3: "Structuring data..."  → progress bar fills to 100%
+  Background: blurred preview of the source page
+  Fun copy: "Parsing through the life story to find the recipe..."
+
+STATE 3 — REVIEW & CONFIRM
+  Parsed recipe shown in card preview format
+  User can see: title, photo, ingredient count, step count
+  "Looks good?" CTA + "Edit Before Saving" secondary option
+  If parsing confidence is low: amber warning "Some fields may need review"
+
+STATE 4 — SUCCESS
+  Confetti-style micro-animation (subtle particle burst, not gaudy)
+  "Added to Your Cookbook" message
+  Quick actions: "Start Cooking" | "Add to Collection" | "View Recipe"
+
+SCREEN 5 — Cooking Mode
+This is the premium feature. Design it as a completely separate visual experience.
+Transition into Cooking Mode:
+
+Screen fades to dark (--bg-dark) over 400ms
+Status bar icons turn white
+Screen wake lock activates (display stays on)
+"Cooking mode on" toast notification
+
+Cooking Mode Layout:
+PERSISTENT HEADER (compact, always visible)
+  Background: --bg-dark-secondary
+  Left: recipe name truncated, DM Sans 13px, --text-inverse opacity 60%
+  Center: "Step 3 of 12" progress indicator (dots or fraction)
+  Right: "✕ Exit" button
+
+STEP CONTENT AREA (full screen, centered)
+  Background: --bg-dark (#1C1814)
+  Step number: huge, Fraunces, 120px, opacity 8%, positioned top-left as 
+               background element (decorative, not readable)
+  Step instruction: Fraunces 34px, --text-inverse, centered, 
+                    max 3–4 lines per step by design
+  For ingredient mentions: highlight them in --accent-primary color
+    e.g. "Add the 2 cloves garlic" → "garlic" is tappable, opens quantity tooltip
+
+TIMER CHIP (appears automatically when step has a time)
+  Floating pill above bottom controls
+  Background: --accent-warning (#F2C94C) with dark text
+  "⏱ 12:00 — Tap to start"
+  When active: counts down, pulses at 0:30 warning, vibrates at 0:00
+
+BOTTOM CONTROLS
+  Three large buttons in a row:
+  [← Prev]     [🎙️ Voice]     [Next →]
+  Min 44×44pt hit areas, extra padding for flour-covered fingers
+  Prev/Next in --bg-dark-secondary background
+  Voice button pulsing ring animation when listening
+
+HANDS-FREE STATUS INDICATOR (top-right corner, subtle)
+  When voice is active: small green dot pulsing
+  When gesture is active: small camera icon pulsing
+  Not intrusive — only visible when features are on
+
+INGREDIENT QUICK-GLANCE (swipe up from bottom)
+  Partial ingredient list for the recipe
+  Compact DM Mono quantities, DM Sans names
+  Allows quick reference without leaving cooking mode
+Voice Command Visual Feedback:
+When user says "Next step":
+  Full-screen flash overlay (white, opacity 20%, 80ms) — like a camera shutter
+  Then step transitions with a horizontal slide animation
+
+When user says "How much [ingredient]":
+  Toast notification rises from bottom with quantity in large DM Mono text
+  Auto-dismisses after 3 seconds
+
+SCREEN 6 — Pantry / Smart Fridge
+Layout:
+HEADER
+  Title: "My Pantry" in Fraunces 28px
+  Subtitle: "47 items tracked" in DM Sans 13px, --text-secondary
+  Right: "Edit" + "Add Item" buttons
+
+EXPIRY ALERT BANNER (conditional)
+  Amber background with items expiring in ≤2 days
+  "Your heavy cream expires tomorrow — 3 recipes use it →"
+  Tappable → opens filtered recipe list
+
+CATEGORIES (horizontal scroll chips)
+  [ All ] [ Produce ] [ Dairy ] [ Meat ] [ Pantry ] [ Freezer ]
+  Active chip: --accent-primary fill
+
+PANTRY GRID
+  3-column grid of ingredient cards
+  Each card:
+    - Ingredient icon (illustration, not emoji — custom icon set)
+    - Ingredient name in DM Sans 13px
+    - Quantity + unit in DM Mono 12px
+    - Expiry indicator (green/amber/red dot)
+    - Tap to edit quantity or mark as used
+
+ZERO-WASTE MATCH CARD (pinned above grid, premium placement)
+  Background: gradient from --ai-bg to white
+  Border: --ai-border
+  "Based on your pantry, you can cook 6 recipes right now →"
+  Tap → navigates to filtered discovery feed
+Add Item Flow:
+Bottom sheet with three input methods:
+1. Search & select from ingredient database (with quantity + unit)
+2. Scan grocery receipt (camera → OCR → bulk import with review)
+3. Quick add: free text field with smart parsing
+   "500g chicken breast exp 26 May" → parses to structured item
+
+SCREEN 7 — Discover / Search
+SEARCH BAR (prominent, top of screen)
+  Large rounded input, placeholder: "Search recipes, ingredients, cuisines..."
+  Right icon: filter funnel with active indicator dot when filters applied
+
+WHEN SEARCH IS EMPTY — Browse Mode:
+  FEATURED COLLECTION
+    Full-width editorial card, 240px height, dark overlay text
+    "This Week: Ramadan Recipes" or "Seasonal: Summer Salads"
+  
+  BROWSE BY CATEGORY (horizontal scroll)
+    Square cards 100×100px: Algerian, Italian, Asian, Mediterranean...
+    Category name overlaid on food photography
+  
+  TRENDING SEARCHES
+    List of search terms with trend arrow icon
+  
+  FILTER CHIPS (horizontal scroll)
+    [ ⏱ Under 30min ] [ 💪 High Protein ] [ 🌱 Vegan ] 
+    [ 🏠 Pantry Match ] [ ⭐ Highly Rated ]
+
+WHEN SEARCH HAS INPUT — Results Mode:
+  Live results appear after 300ms debounce
+  Results grouped: Recipes (primary) / Ingredients / Collections
+  Each result row: thumbnail + name + metadata
+  
+  SMART SEARCH FEATURES:
+    "chicken and rice" → searches for recipes containing both ingredients
+    "no onion" → adds exclusion filter automatically
+    "quick pasta" → applies <30min filter automatically
+    Show these interpretations as teal chips: "Filtering: Under 30 min ✕"
+
+SCREEN 8 — Meal Planner
+CALENDAR HEADER
+  Week view (7 columns), current day highlighted in --accent-primary
+  Left/Right arrows to navigate weeks
+  Month + year label in Fraunces
+
+MEAL SLOTS GRID
+  For each day: 3 slots (Breakfast, Lunch, Dinner) + optional Snack
+  Empty slot: dashed border, "+" tap to assign recipe
+  Filled slot: compact recipe card with photo thumbnail
+    Long press → reorder / remove
+  
+SUMMARY FOOTER (sticky bottom, above nav)
+  Background: --bg-dark, text white
+  "Week's shopping: 12 items needed" → taps to open grocery list
+  "Est. cost: ~2,400 DZD" (optional, if price data available)
+  Macro summary: "Avg 2,100 cal/day · 145g protein"
+
+GROCERY LIST (separate tab or slide-over)
+  Grouped by category (Produce, Dairy, Meat, Pantry)
+  Each item:
+    Checkbox | Quantity in DM Mono | Ingredient name
+    Sub-text: "Used in: Monday Dinner, Wednesday Lunch"
+  Pantry items pre-checked with "Already have" label
+  Share button → exports as WhatsApp message or clipboard text
+
+SCREEN 9 — Profile
+PROFILE HEADER
+  Avatar (150×150px, circular, large — this is personal)
+  Name in Fraunces 24px
+  "Cooking since [date]" in DM Sans 13px, --text-secondary
+  
+STATS ROW (3 columns)
+  [ 142 Saved ] [ 38 Cooked ] [ 12 Collections ]
+  Numbers in DM Mono 24px bold, labels in DM Sans 11px
+
+MY COLLECTIONS GRID
+  2-column grid of collection cards
+  Mosaic thumbnail (4 mini food photos in a 2×2 grid per collection)
+  Collection name + recipe count
+  Private/Public indicator
+
+COOK LOG
+  "My Cooking Journey" section
+  Timeline of cooked recipes with user-uploaded photos
+  Each entry: date, recipe name, personal rating, optional note
+  Feels like a cooking diary / journal
+
+SETTINGS
+  Standard list: Dietary Preferences, Notification Settings, 
+                 Linked Accounts, Dark Mode toggle, Offline Storage
+
+SECTION 4 — COMPONENT LIBRARY SPECIFICATION
+4.1 Recipe Card (3 variants)
+VARIANT A — Large Feed Card (full-width)
+  Height: 220px
+  Full-bleed image: top 60%
+  Gradient overlay: bottom 40% (transparent → #1C1814 at 70%)
+  Content on image: name (Fraunces 20px white), metadata chips
+  Below image: cuisine tag + time + save button row
+  Border-radius: 16px
+  Shadow: --shadow-md
+
+VARIANT B — Compact Horizontal Card
+  Height: 96px, width: 260px (for horizontal scroll lists)
+  Left: 96×96px image (rounded 12px)
+  Right: name (DM Sans 15px semibold), 2 lines max
+         time + servings row
+         pantry match percentage in accent color
+  Shadow: --shadow-sm
+
+VARIANT C — Grid Card (for collection/search views)
+  Width: (screen - 48px) / 2 ≈ 171px
+  Image: square top portion
+  Below: name (2 lines, DM Sans 14px), time + match chip
+  Height: auto (image + content)
+4.2 The Import FAB
+Size: 56×56px
+Shape: Circle (pill radius)
+Background: --accent-primary gradient (saffron to deeper orange)
+Icon: "+" morphs to "×" when sheet is open — 200ms rotation animation
+Shadow: --shadow-lg + subtle --accent-primary color tint in shadow
+Position: center of nav bar, elevated 8px above nav bar surface
+Haptic: medium impact on tap
+4.3 AI Feature Badge
+Used on: substitution engine, smart recommendations, pantry matcher
+Anatomy:
+  Background: --ai-bg (#EDF9F2)
+  Border: 1px solid --ai-border (#3DBE6C)
+  Left: small sparkle/wand icon in --ai-text color
+  Text: label in DM Sans 12px, --ai-text color
+Examples: "Savora Pick ✦" | "Smart Substitute" | "AI Import"
+Border-radius: 100px (pill)
+Padding: 4px 10px
+4.4 Ingredient Row (in recipe detail)
+Layout: horizontal row, 56px height, bordered bottom with --border-subtle
+Left:   [Quantity in DM Mono 15px semibold] [Unit in DM Mono 13px regular, --text-secondary]
+        Fixed width: 80px column (right-aligned numbers for alignment)
+Center: [Ingredient name in DM Sans 15px, --text-primary]
+        [Optional: preparation note in DM Sans 13px, --text-secondary] "finely chopped"
+Right:  [Pantry indicator: green checkmark or hollow circle]
+        [If not in pantry: small "Add" chip]
+
+On tap: row expands (200ms) to show:
+  "Substitute this ingredient" option in --ai-bg
+  "Add to pantry" option
+4.5 Timer Component
+INACTIVE STATE
+  Chip: "⏱ 12:00 — Start Timer" in --accent-warning bg, dark text
+  Tap to activate
+
+ACTIVE STATE (cooking mode)
+  Enlarged floating pill: "11:43" countdown in DM Mono 28px
+  Background: --accent-warning (amber)
+  Subtle pulse animation on number every second
+  At 0:30: background shifts to orange
+  At 0:00: vibrate + push notification + background flashes
+
+MULTIPLE TIMERS
+  Stack vertically as small chips in cooking mode
+  Labels: "Oven — 12:43" | "Pasta — 4:20"
+  Each has independent countdown
+
+SECTION 5 — ILLUSTRATION & ICONOGRAPHY SYSTEM
+Icon Style:
+Use a consistent outline icon set. Recommended: Phosphor Icons (2px stroke, rounded caps). Do NOT mix with filled icons at the same hierarchy level. Navigation icons may use filled variant only when active.
+Custom Illustrations (for empty states & onboarding):
+Style: Loose editorial illustration — think hand-drawn with a confident stroke, similar to Monocle magazine or NY Times Food section illustrations. Warm palette matching the color system. Characters should be hands-only or abstract (no full character avatars — they age poorly and feel corporate).
+Empty State Copy & Illustrations:
+EMPTY COOKBOOK
+  Illustration: A beautiful empty cookbook open on a wooden table
+  Title: "Your cookbook awaits"
+  Body: "Paste any recipe URL to begin. We'll handle the rest."
+  CTA: "Import Your First Recipe"
+
+EMPTY PANTRY
+  Illustration: Empty kitchen shelves with one lonely item
+  Title: "What's in your kitchen?"
+  Body: "Track your ingredients and we'll tell you what to cook."
+  CTA: "Add Pantry Items"
+
+EMPTY SEARCH
+  Illustration: Magnifying glass over a steaming bowl
+  Title: "Couldn't find that"
+  Body: "Try different keywords, or import a recipe with that name."
+  CTA: "Import Instead"
+
+EMPTY MEAL PLAN
+  Illustration: A blank weekly calendar with a fork and spoon
+  Title: "Plan your week"
+  Body: "Drag recipes here to build your meal plan and grocery list."
+  CTA: "Browse Recipes"
+
+SECTION 6 — DARK MODE SPECIFICATION
+All screens have a dark mode variant. Rules:
+Map light tokens to dark equivalents:
+--bg-primary     → #1C1814   (espresso, not pure black)
+--bg-secondary   → #242018   (slightly lighter, cards)
+--bg-tertiary    → #2E2822   (elevated surfaces)
+--surface-card   → #2A2420   (cards on dark bg)
+--border-subtle  → #3A332D   (subtle borders)
+--border-strong  → #4A4038   (input borders)
+--text-primary   → #F5F0E8   (warm off-white, not pure white)
+--text-secondary → #9C8B7E   (unchanged — works on both)
+--text-tertiary  → #6B5E52   (unchanged)
+
+Accent colors remain the same. They're saturated enough to pop on both.
+
+AI badge dark mode:
+--ai-bg    → #1A2E22   (dark green, not light sage)
+--ai-text  → #3DBE6C   (unchanged)
+Cooking mode is always dark (this is intentional — it never changes).
+
+SECTION 7 — INTERACTION PATTERNS & MICRO-ANIMATIONS
+RECIPE CARD SAVE (bookmark tap)
+  Icon bounces with spring curve (ease-spring, 250ms)
+  Fill animates from outline to solid in --accent-primary
+  Particle burst: 6 small dots explode outward and fade (200ms)
+  Haptic: light impact
+
+FAB OPEN
+  FAB scales to 1.05 on tap (80ms), back to 1.0 (80ms)
+  Bottom sheet rises with ease-decelerate (350ms)
+  Background dims: opacity 0→0.4 overlay (350ms)
+  FAB icon rotates 45° to become "×" (200ms, ease-standard)
+
+RECIPE IMPORT COMPLETE
+  Card "falls" from top of screen into the cookbook (300ms)
+  Scale: 0.6→1.0 with spring, opacity 0→1
+  Cookbook icon in nav bar briefly bounces
+
+PANTRY ITEM ADD
+  Ingredient chip "flies" from pantry to recipe card (if adding from recipe detail)
+  Green check materializes on ingredient row
+
+COOKING MODE — STEP TRANSITION
+  Next: current step slides left, new step slides in from right (200ms, ease-standard)
+  Previous: reverse direction
+  Voice trigger: adds a quick white flash overlay (80ms) before slide
+
+STEP COMPLETION
+  User can swipe right on a step to mark as done
+  Step text gets strikethrough animation (left-to-right line draw, 300ms)
+  Next step highlight pulses once
+
+TIMER RING
+  Device vibrates in pattern: long, short, long
+  Screen flashes warm amber three times
+  Toast notification persists until dismissed (unlike normal toasts)
+
+SECTION 8 — PLATFORM-SPECIFIC IMPLEMENTATION NOTES
+Flutter Implementation Notes:
+FONTS
+  Add to pubspec.yaml:
+    google_fonts: ^6.x
+  Use: GoogleFonts.fraunces(), GoogleFonts.dmSans(), GoogleFonts.dmMono()
+  Or: Bundle as local assets (better for offline-first)
+
+STATE MANAGEMENT
+  Use flutter_riverpod for global state
+  Use flutter_bloc for complex flow states (import flow state machine)
+
+LOCAL DATABASE (offline-first)
+  Use isar for the local recipe database
+  Sync strategy: local-first, background sync to Django API
+  User should see their recipes immediately, even offline
+
+WAKE LOCK (cooking mode)
+  Package: wakelock_plus
+  Activate on entering cooking mode, release on exit
+
+GESTURES
+  Use google_mlkit_face_mesh for on-device gesture detection
+  Run on isolate to not block UI thread
+
+BOTTOM NAVIGATION
+  Use go_router for navigation
+  Bottom nav persists across tab switches (no re-render)
+  Use IndexedStack to maintain tab state
+
+ANIMATIONS
+  Use flutter_animate package (wraps AnimationController boilerplate)
+  Import animations package for Material motion transitions
+
+HAPTICS
+  HapticFeedback.lightImpact() for most interactions
+  HapticFeedback.mediumImpact() for saves and completions
+  HapticFeedback.heavyImpact() for timer ring
+
+SAFE AREAS
+  Wrap all screens with SafeArea widget
+  Bottom padding: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight
+
+SECTION 9 — WHAT TO BUILD FIRST (Screen Priority Order)
+Tell Claude Design to build screens in this exact order, because each one is demonstrable independently and each one is more impressive than the last:
+SPRINT 1 — Core Screens (Demo-ready in week 1)
+  1. Recipe Detail Screen — This is the heart. Get it beautiful.
+  2. Home / Discovery Feed — This is the first impression.
+  3. Import URL Flow — This is the technical showpiece.
+
+SPRINT 2 — Intelligence Screens (Week 2)
+  4. Pantry Screen — This is the differentiated feature.
+  5. Cooking Mode — This is the UX showpiece.
+  6. Smart Substitution Bottom Sheet — This is the AI/ML moment.
+
+SPRINT 3 — Complete Experience (Week 3)
+  7. Discover / Search Screen
+  8. Meal Planner
+  9. Profile + Cook Log
+  10. Onboarding Sequence
+
+SECTION 10 — DESIGN QUALITY CHECKLIST
+Before considering any screen complete, verify every item:
+TYPOGRAPHY
+  [ ] Fraunces used for all display/heading/recipe names
+  [ ] DM Mono used for all quantities, timers, nutritional values
+  [ ] No font smaller than 11px anywhere
+  [ ] Line heights correct per scale (text won't feel cramped)
+
+COLOR
+  [ ] No hardcoded hex values — all tokens from design system
+  [ ] Dark mode variant exists for every screen
+  [ ] AI features consistently use ai-bg / ai-border / ai-text tokens
+  [ ] Accent colors used sparingly — primary CTA only, not decoratively
+
+ACCESSIBILITY
+  [ ] All text meets 4.5:1 contrast ratio (test with Stark or Contrast)
+  [ ] All interactive elements have accessibility labels
+  [ ] Touch targets minimum 44×44px (especially in cooking mode)
+  [ ] No information conveyed by color alone
+
+SPACING
+  [ ] All spacing values are multiples of 4
+  [ ] Card internal padding: 16px
+  [ ] Screen horizontal margins: 20px
+  [ ] Section separation: 32px minimum
+
+INTERACTION STATES
+  [ ] Every button has: default, pressed, disabled states designed
+  [ ] Every input has: empty, active, filled, error states
+  [ ] Loading states exist for: import, search, AI features
+
+MOBILE SPECIFICS
+  [ ] Safe area padding on top and bottom
+  [ ] Bottom navigation not obscuring content
+  [ ] Cooking mode wake-lock indicator visible
+  [ ] Landscape orientation considered for cooking mode (wider step text)
