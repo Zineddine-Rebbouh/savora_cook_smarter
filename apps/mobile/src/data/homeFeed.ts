@@ -40,7 +40,7 @@ export const readyToCookRecipes: ReadyRecipe[] = [
     recipeId: 'savora-creamy-tuscan-chicken',
     title: 'Creamy Tuscan Chicken',
     image:
-      'https://images.unsplash.com/photo-1604908176997-4318c0b5c3f1?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=1200&q=80',
     time: '25 min',
     pantryLabel: 'All ingredients in pantry',
     pantryMatch: 1,
@@ -83,7 +83,7 @@ export const forYouRecipes: FeedRecipe[] = [
     recipeId: 'savora-creamy-tuscan-chicken',
     title: 'Creamy Tuscan Chicken with Charred Lemon',
     image:
-      'https://images.unsplash.com/photo-1604908176997-4318c0b5c3f1?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=1200&q=80',
     cuisine: 'Italian-inspired',
     time: '45 min',
     difficulty: 2,

@@ -8,7 +8,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Savora uses speech recognition so you can control cooking mode hands-free.",
+        "NSMicrophoneUsageDescription": "Savora uses the microphone to hear your voice commands."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +22,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.savoramobile"
+      "package": "com.anonymous.savoramobile",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

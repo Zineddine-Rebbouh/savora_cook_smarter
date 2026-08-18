@@ -3,15 +3,19 @@ import { demoRecipe, initialRecipes, type Recipe } from '../data/mockRecipe';
 
 type RecipeState = {
   recipes: Recipe[];
+  savedIds: string[];
   getRecipeById: (id: string) => Recipe | undefined;
   saveRecipe: (recipe: Recipe) => void;
   createRecipeFromUrl: (url: string) => Recipe;
+  isSaved: (id: string) => boolean;
+  toggleSaved: (id: string) => void;
 };
 
 const RecipesContext = createContext<RecipeState | undefined>(undefined);
 
 export function RecipesProvider({ children }: { children: React.ReactNode }) {
   const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
 
   const getRecipeById = useCallback(
     (id: string) => recipes.find((recipe) => recipe.id === id),
@@ -20,6 +24,17 @@ export function RecipesProvider({ children }: { children: React.ReactNode }) {
 
   const saveRecipe = useCallback((recipe: Recipe) => {
     setRecipes((current) => [recipe, ...current.filter((item) => item.id !== recipe.id)]);
+  }, []);
+
+  const isSaved = useCallback(
+    (id: string) => savedIds.includes(id),
+    [savedIds],
+  );
+
+  const toggleSaved = useCallback((id: string) => {
+    setSavedIds((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+    );
   }, []);
 
   const createRecipeFromUrl = useCallback((url: string): Recipe => {
@@ -62,8 +77,16 @@ export function RecipesProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ recipes, getRecipeById, saveRecipe, createRecipeFromUrl }),
-    [recipes, getRecipeById, saveRecipe, createRecipeFromUrl],
+    () => ({
+      recipes,
+      savedIds,
+      getRecipeById,
+      saveRecipe,
+      createRecipeFromUrl,
+      isSaved,
+      toggleSaved,
+    }),
+    [recipes, savedIds, getRecipeById, saveRecipe, createRecipeFromUrl, isSaved, toggleSaved],
   );
 
   return (

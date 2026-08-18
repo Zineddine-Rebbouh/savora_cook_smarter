@@ -5,6 +5,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -38,15 +39,107 @@ const slides = [
   },
 ];
 
+const dietaryPreferences = [
+  'Vegetarian',
+  'Vegan',
+  'Gluten-Free',
+  'Dairy-Free',
+  'Halal',
+  'Keto',
+  'None',
+];
+
 export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
   const styles = createStyles(theme);
+  const [stage, setStage] = useState<'carousel' | 'account'>('carousel');
   const [index, setIndex] = useState(0);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [selectedDiets, setSelectedDiets] = useState<string[]>([]);
   const { width } = useWindowDimensions();
   const scrollRef = useRef<FlatList<any>>(null);
+
+  function toggleDiet(label: string) {
+    setSelectedDiets((current) =>
+      current.includes(label)
+        ? current.filter((item) => item !== label)
+        : [...current, label],
+    );
+  }
+
+  if (stage === 'account') {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <View style={styles.pagePadding}>
+          <Text style={styles.accountTitle}>Set up your cookbook</Text>
+          <Text style={styles.accountSubtitle}>
+            Tell us how you eat. Set these now, skip forever.
+          </Text>
+
+          <TextInput
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            onChangeText={setEmail}
+            placeholder="Email"
+            placeholderTextColor={theme.colors.textTertiary}
+            style={styles.input}
+            value={email}
+          />
+          <TextInput
+            autoCapitalize="none"
+            autoComplete="password"
+            onChangeText={setPassword}
+            placeholder="Password"
+            placeholderTextColor={theme.colors.textTertiary}
+            secureTextEntry
+            style={styles.input}
+            value={password}
+          />
+
+          <Text style={styles.dietLabel}>Dietary preferences</Text>
+          <View style={styles.dietRow}>
+            {dietaryPreferences.map((label) => {
+              const active = selectedDiets.includes(label);
+
+              return (
+                <Pressable
+                  key={label}
+                  onPress={() => toggleDiet(label)}
+                  style={[styles.dietChip, active && styles.dietChipActive]}
+                >
+                  <Text style={[styles.dietChipText, active && styles.dietChipTextActive]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Pressable
+            onPress={onFinish}
+            style={({ pressed }) => [
+              styles.ctaButton,
+              styles.ctaSpacing,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.ctaText}>Create My Cookbook</Text>
+          </Pressable>
+          <Pressable onPress={onFinish} style={styles.skipButton}>
+            <Text style={styles.skipText}>Skip for now</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
       <View style={styles.heroShell}>
+        <Pressable onPress={() => setStage('account')} style={styles.skipLink}>
+          <Text style={styles.skipLinkText}>Skip</Text>
+        </Pressable>
         <View style={styles.heroContent}>
           <View style={styles.logoShell}>
             <Text style={styles.logo}>S</Text>
@@ -94,7 +187,10 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
             />
           ))}
         </View>
-        <Pressable style={styles.ctaButton} onPress={onFinish}>
+        <Pressable
+          onPress={() => setStage('account')}
+          style={styles.ctaButton}
+        >
           <Text style={styles.ctaText}>Get Started</Text>
         </Pressable>
       </View>
@@ -110,12 +206,112 @@ function createStyles(theme: AppTheme) {
       backgroundColor: colors.bgPrimary,
       flex: 1,
     },
+    pagePadding: {
+      flex: 1,
+      paddingHorizontal: spacing[5],
+      paddingTop: spacing[10],
+    },
+    accountTitle: {
+      color: colors.textPrimary,
+      fontFamily: fonts.displaySemiBold,
+      fontSize: 28,
+      lineHeight: 36,
+    },
+    accountSubtitle: {
+      color: colors.textSecondary,
+      fontFamily: fonts.body,
+      fontSize: 15,
+      lineHeight: 22,
+      marginTop: spacing[2],
+      marginBottom: spacing[6],
+    },
+    input: {
+      backgroundColor: colors.surfaceCard,
+      borderColor: colors.borderStrong,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      color: colors.textPrimary,
+      fontFamily: fonts.body,
+      fontSize: 15,
+      lineHeight: 22,
+      marginBottom: spacing[3],
+      minHeight: 54,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
+    },
+    dietLabel: {
+      color: colors.textPrimary,
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 15,
+      lineHeight: 22,
+      marginTop: spacing[4],
+      marginBottom: spacing[3],
+    },
+    dietRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing[2],
+    },
+    dietChip: {
+      backgroundColor: colors.surfaceCard,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
+    },
+    dietChipActive: {
+      backgroundColor: colors.accentPrimary,
+      borderColor: colors.accentPrimary,
+    },
+    dietChipText: {
+      color: colors.textPrimary,
+      fontFamily: fonts.bodyMedium,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    dietChipTextActive: {
+      color: colors.textInverse,
+    },
+    ctaSpacing: {
+      marginTop: 'auto',
+    },
+    skipButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 44,
+      paddingVertical: spacing[3],
+    },
+    skipText: {
+      color: colors.textSecondary,
+      fontFamily: fonts.bodyMedium,
+      fontSize: 14,
+      lineHeight: 18,
+    },
+    pressed: {
+      opacity: 0.8,
+    },
     heroShell: {
       alignItems: 'center',
       backgroundColor: colors.surfaceCard,
       flex: 1,
       justifyContent: 'center',
       paddingHorizontal: spacing[5],
+      position: 'relative',
+    },
+    skipLink: {
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[2],
+      position: 'absolute',
+      right: spacing[3],
+      top: spacing[3],
+      zIndex: 1,
+    },
+    skipLinkText: {
+      color: colors.textTertiary,
+      fontFamily: fonts.bodyMedium,
+      fontSize: 14,
+      lineHeight: 18,
     },
     heroContent: {
       alignItems: 'center',

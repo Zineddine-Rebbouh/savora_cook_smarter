@@ -17,6 +17,7 @@ import {
   readyToCookRecipes,
   recentRecipes,
 } from '../data/homeFeed';
+import { useRecipes } from '../state/RecipesContext';
 import type { AppTheme } from '../theme';
 
 type HomeScreenProps = {
@@ -25,6 +26,7 @@ type HomeScreenProps = {
 };
 
 export function HomeScreen({ onOpenRecipe, theme }: HomeScreenProps) {
+  const { isSaved, toggleSaved } = useRecipes();
   const styles = createStyles(theme);
 
   return (
@@ -146,13 +148,18 @@ export function HomeScreen({ onOpenRecipe, theme }: HomeScreenProps) {
                         <View />
                       )}
                       <Pressable
+                        onPress={() => toggleSaved(recipe.recipeId)}
                         style={({ pressed }) => [
                           styles.bookmarkButton,
                           pressed && styles.pressed,
                         ]}
                       >
                         <Feather
-                          color={theme.colors.textInverse}
+                          color={
+                            isSaved(recipe.recipeId)
+                              ? theme.colors.accentPrimary
+                              : theme.colors.textInverse
+                          }
                           name="bookmark"
                           size={16}
                         />

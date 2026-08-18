@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { PantryProvider } from './src/state/PantryContext';
 import { RecipesProvider } from './src/state/RecipesContext';
 import { buildTheme } from './src/theme';
 
@@ -57,8 +58,10 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <RecipesProvider>
-          <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-          <AppNavigator theme={theme} />
+          <PantryProvider>
+            <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+            <AppNavigator theme={theme} />
+          </PantryProvider>
         </RecipesProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

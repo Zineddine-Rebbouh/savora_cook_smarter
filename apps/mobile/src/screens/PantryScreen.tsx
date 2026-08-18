@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { usePantry } from '../state/PantryContext';
 import type { AppTheme } from '../theme';
 
 type PantryScreenProps = {
@@ -18,17 +19,9 @@ type PantryScreenProps = {
 
 const categories = ['All', 'Produce', 'Dairy', 'Meat', 'Pantry', 'Freezer'];
 
-const ingredients = [
-  { id: 'pantry-1', name: 'Heavy cream', quantity: '250ml', expiry: 'Tomorrow', alert: 'high' },
-  { id: 'pantry-2', name: 'Chicken breast', quantity: '2 pcs', expiry: '4 days', alert: 'medium' },
-  { id: 'pantry-3', name: 'Eggs', quantity: '6', expiry: '7 days', alert: 'low' },
-  { id: 'pantry-4', name: 'Lemon', quantity: '3', expiry: '2 days', alert: 'medium' },
-  { id: 'pantry-5', name: 'Chickpeas', quantity: '400g', expiry: '30 days', alert: 'low' },
-  { id: 'pantry-6', name: 'Butter', quantity: '100g', expiry: '5 days', alert: 'medium' },
-];
-
 export function PantryScreen({ theme }: PantryScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const { items } = usePantry();
   const styles = createStyles(theme);
 
   return (
@@ -41,7 +34,7 @@ export function PantryScreen({ theme }: PantryScreenProps) {
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.title}>My Pantry</Text>
-              <Text style={styles.subtitle}>47 items tracked</Text>
+              <Text style={styles.subtitle}>{items.length} items tracked</Text>
             </View>
             <View style={styles.headerActions}>
               <Pressable
@@ -112,7 +105,7 @@ export function PantryScreen({ theme }: PantryScreenProps) {
 
           <Text style={styles.gridHeading}>Ingredients</Text>
           <FlatList
-            data={ingredients}
+            data={items}
             numColumns={3}
             scrollEnabled={false}
             keyExtractor={(item) => item.id}

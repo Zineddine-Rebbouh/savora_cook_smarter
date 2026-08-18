@@ -34,3 +34,7 @@ web-build/
 .claude/
 npm-peer.json
 
+
+#md files
+*.md
+

@@ -210,7 +210,7 @@ function TabNavigator({
         {() => <HomeScreen onOpenRecipe={onOpenRecipe} theme={theme} />}
       </Tab.Screen>
       <Tab.Screen name="Discover" options={{ title: 'Discover' }}>
-        {() => <DiscoverScreen theme={theme} />}
+        {() => <DiscoverScreen onOpenRecipe={onOpenRecipe} theme={theme} />}
       </Tab.Screen>
       <Tab.Screen
         name="Add"
@@ -275,7 +275,6 @@ function AddTabButton({
     accessibilityLargeContentTitle,
     accessibilityState,
     accessibilityValue,
-    children,
     delayLongPress,
     disabled,
     onLongPress,
@@ -333,7 +332,6 @@ function AddTabButton({
         <Feather color={theme.colors.textInverse} name="plus" size={22} />
       </View>
       <Text style={styles.addLabel}>Add</Text>
-      {children}
     </AnimatedPressable>
   );
 }

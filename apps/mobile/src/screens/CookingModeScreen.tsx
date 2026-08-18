@@ -1,14 +1,17 @@
 import { Feather } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useKeepAwake } from 'expo-keep-awake';
+import { useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  Vibration,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useVoiceCommands } from '../native/useVoiceCommands';
 import type { AppTheme } from '../theme';
 
 type CookingModeScreenProps = {
@@ -39,10 +42,121 @@ const steps = [
   },
 ];
 
+const quickGlance = ['2 cloves garlic', '1 lemon', '120g spinach'];
+
+type VoiceCommand =
+  | { kind: 'next' }
+  | { kind: 'previous' }
+  | { kind: 'howMuch'; ingredient: string }
+  | null;
+
+function matchCommand(text: string): VoiceCommand {
+  const t = text.toLowerCase().trim();
+
+  if (!t) {
+    return null;
+  }
+  if (/\b(next|continue|forward)\b/.test(t)) {
+    return { kind: 'next' };
+  }
+  if (/\b(prev|previous|back|backward)\b/.test(t)) {
+    return { kind: 'previous' };
+  }
+
+  const howMuch = t.match(/(?:how (?:much|many))\s+(.+)/);
+
+  return howMuch ? { kind: 'howMuch', ingredient: howMuch[1].trim() } : null;
+}
+
 export function CookingModeScreen({ onExit, theme }: CookingModeScreenProps) {
+  useKeepAwake();
+  const { isSupported, isListening, partial, results, start, stop } = useVoiceCommands();
   const [currentStep, setCurrentStep] = useState(1);
+  const [timer, setTimer] = useState<{ minutes: number; remaining: number } | null>(null);
+  const [voiceMessage, setVoiceMessage] = useState<string | null>(null);
   const styles = createStyles(theme);
   const step = steps[currentStep - 1];
+
+  useEffect(() => {
+    setTimer(null);
+  }, [currentStep]);
+
+  useEffect(() => {
+    const final = results[0];
+
+    if (!final) {
+      return;
+    }
+
+    const command = matchCommand(final);
+
+    if (command?.kind === 'next') {
+      setCurrentStep((value) => Math.min(steps.length, value + 1));
+      setVoiceMessage('Next step');
+    } else if (command?.kind === 'previous') {
+      setCurrentStep((value) => Math.max(1, value - 1));
+      setVoiceMessage('Previous step');
+    } else if (command?.kind === 'howMuch') {
+      const found = quickGlance.find((item) =>
+        item.toLowerCase().includes(command.ingredient),
+      );
+      setVoiceMessage(found ?? `No ingredient "${command.ingredient}" in this recipe`);
+    } else {
+      setVoiceMessage(`Heard: "${final}"`);
+    }
+  }, [results]);
+
+  useEffect(() => {
+    if (!voiceMessage) {
+      return;
+    }
+
+    const id = setTimeout(() => setVoiceMessage(null), 4000);
+
+    return () => clearTimeout(id);
+  }, [voiceMessage]);
+
+  useEffect(() => {
+    if (!timer || timer.remaining > 0) {
+      return;
+    }
+
+    Vibration.vibrate([500, 300, 500]);
+    setTimer(null);
+  }, [timer]);
+
+  useEffect(() => {
+    if (!timer || timer.remaining <= 0) {
+      return;
+    }
+
+    const id = setTimeout(
+      () => setTimer((value) => (value ? { ...value, remaining: value.remaining - 1 } : value)),
+      1000,
+    );
+
+    return () => clearTimeout(id);
+  }, [timer]);
+
+  function startTimer() {
+    if (step.timer) {
+      setTimer({ minutes: step.timer, remaining: step.timer * 60 });
+    }
+  }
+
+  function toggleVoice() {
+    if (!isSupported) {
+      setVoiceMessage('Voice is not supported on this device');
+      return;
+    }
+
+    setVoiceMessage(null);
+    if (isListening) {
+      stop();
+    } else {
+      start();
+    }
+  }
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -68,10 +182,18 @@ export function CookingModeScreen({ onExit, theme }: CookingModeScreenProps) {
           <Text style={styles.stepCopy}>{step.title}</Text>
           {step.note ? <Text style={styles.stepNote}>{step.note}</Text> : null}
           {step.timer ? (
-            <View style={styles.timerChip}>
+            <Pressable
+              onPress={startTimer}
+              style={({ pressed }) => [
+                styles.timerChip,
+                pressed && styles.timerChipPressed,
+              ]}
+            >
               <Feather color={theme.colors.bgDark} name="clock" size={14} />
-              <Text style={styles.timerChipText}>{step.timer}:00 — Tap to start</Text>
-            </View>
+              <Text style={styles.timerChipText}>
+                {timer ? formatTimer(timer.remaining) : `${step.timer}:00 — Tap to start`}
+              </Text>
+            </Pressable>
           ) : null}
         </View>
 
@@ -84,9 +206,16 @@ export function CookingModeScreen({ onExit, theme }: CookingModeScreenProps) {
             <Feather color={theme.colors.textPrimary} name="chevron-left" size={20} />
             <Text style={styles.navLabel}>Prev</Text>
           </Pressable>
-          <Pressable style={styles.voiceButton}>
-            <View style={styles.voicePulse} />
-            <Feather color={theme.colors.textInverse} name="mic" size={20} />
+          <Pressable
+            onPress={toggleVoice}
+            style={[styles.voiceButton, isListening && styles.voiceButtonActive]}
+          >
+            <View style={[styles.voicePulse, isListening && styles.voicePulseActive]} />
+            <Feather
+              color={theme.colors.textInverse}
+              name={isListening ? 'square' : 'mic'}
+              size={20}
+            />
           </Pressable>
           <Pressable
             disabled={currentStep === steps.length}
@@ -98,9 +227,22 @@ export function CookingModeScreen({ onExit, theme }: CookingModeScreenProps) {
           </Pressable>
         </View>
 
+        {isListening || voiceMessage ? (
+          <View style={styles.voiceBanner}>
+            <Feather
+              color={theme.colors.accentSecondary}
+              name={isListening ? 'mic' : 'check'}
+              size={16}
+            />
+            <Text style={styles.voiceBannerText}>
+              {isListening ? (partial ? `"${partial}"` : 'Listening…') : voiceMessage}
+            </Text>
+          </View>
+        ) : null}
+
         <View style={styles.quickGlanceCard}>
           <Text style={styles.quickGlanceTitle}>Ingredients quick glance</Text>
-          {['2 cloves garlic', '1 lemon', '120g spinach'].map((item) => (
+          {quickGlance.map((item) => (
             <View key={item} style={styles.quickItemRow}>
               <Text style={styles.quickItemAmount}>1x</Text>
               <Text style={styles.quickItemText}>{item}</Text>
@@ -110,6 +252,13 @@ export function CookingModeScreen({ onExit, theme }: CookingModeScreenProps) {
       </View>
     </SafeAreaView>
   );
+}
+
+function formatTimer(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 function createStyles(theme: AppTheme) {
@@ -217,6 +366,9 @@ function createStyles(theme: AppTheme) {
       paddingHorizontal: spacing[4],
       paddingVertical: spacing[3],
     },
+    timerChipPressed: {
+      opacity: 0.85,
+    },
     timerChipText: {
       color: colors.bgDark,
       fontFamily: fonts.monoMedium,
@@ -256,6 +408,9 @@ function createStyles(theme: AppTheme) {
       justifyContent: 'center',
       width: 56,
     },
+    voiceButtonActive: {
+      backgroundColor: colors.accentDanger,
+    },
     voicePulse: {
       borderColor: colors.textInverse,
       borderRadius: 999,
@@ -264,6 +419,25 @@ function createStyles(theme: AppTheme) {
       position: 'absolute',
       width: 56,
       opacity: 0.3,
+    },
+    voicePulseActive: {
+      opacity: 0.7,
+    },
+    voiceBanner: {
+      alignItems: 'center',
+      backgroundColor: colors.bgDarkSecondary,
+      borderRadius: radius.lg,
+      flexDirection: 'row',
+      gap: spacing[2],
+      marginTop: spacing[5],
+      padding: spacing[4],
+    },
+    voiceBannerText: {
+      color: colors.textInverse,
+      fontFamily: fonts.body,
+      fontSize: 14,
+      lineHeight: 20,
+      flex: 1,
     },
     quickGlanceCard: {
       backgroundColor: colors.surfaceCard,

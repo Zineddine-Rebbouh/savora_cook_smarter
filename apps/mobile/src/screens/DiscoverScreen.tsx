@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -11,9 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useRecipes } from '../state/RecipesContext';
 import type { AppTheme } from '../theme';
 
 type DiscoverScreenProps = {
+  onOpenRecipe?: (recipeId: string) => void;
   theme: AppTheme;
 };
 
@@ -45,10 +47,36 @@ const featured = {
   subtitle: 'Bright recipes for lighter evenings',
 };
 
-export function DiscoverScreen({ theme }: DiscoverScreenProps) {
+export function DiscoverScreen({ onOpenRecipe, theme }: DiscoverScreenProps) {
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const { recipes } = useRecipes();
   const styles = createStyles(theme);
-  const hasQuery = query.trim().length > 0;
+  const hasQuery = debouncedQuery.trim().length > 0;
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(query), 300);
+
+    return () => clearTimeout(id);
+  }, [query]);
+
+  const results = debouncedQuery.trim()
+    ? recipes.filter((recipe) => {
+        const term = debouncedQuery.toLowerCase();
+        const haystack = `${recipe.title} ${recipe.source} ${recipe.ingredients
+          .map((ingredient) => ingredient.name)
+          .join(' ')}`.toLowerCase();
+
+        if (term.startsWith('no ')) {
+          const excluded = term.slice(3);
+          return !haystack.includes(excluded);
+        }
+
+        return term
+          .split(' ')
+          .every((word) => word && haystack.includes(word));
+      })
+    : [];
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -83,59 +111,103 @@ export function DiscoverScreen({ theme }: DiscoverScreenProps) {
             />
           </View>
 
-          <View style={styles.sectionCard}>
-            <View style={styles.featuredCard}>
-              <Text style={styles.featuredLabel}>Featured Collection</Text>
-              <Text style={styles.featuredTitle}>{featured.title}</Text>
-              <Text style={styles.featuredSubtitle}>{featured.subtitle}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.sectionHeading}>Browse by category</Text>
-          <FlatList
-            data={categoryCards}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.categoryRow}
-            renderItem={({ item }) => (
-              <Pressable style={styles.categoryCard}>
-                <View style={styles.categoryImage} />
-                <Text style={styles.categoryTitle}>{item.title}</Text>
-                <Text style={styles.categorySubtitle}>{item.subtitle}</Text>
-              </Pressable>
-            )}
-          />
-
-          <Text style={styles.sectionHeading}>Smart filters</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipRow}
-          >
-            {['Under 30min', 'High Protein', 'Vegan', 'Pantry Match', 'Highly Rated'].map((label) => (
-              <Pressable key={label} style={styles.filterChip}>
-                <Text style={styles.filterChipText}>{label}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-
-          <Text style={styles.sectionHeading}>Trending searches</Text>
-          <View style={styles.trendingList}>
-            {trendingSearches.map((term) => (
-              <Pressable key={term} style={styles.trendingItem}>
-                <Text style={styles.trendingText}>{term}</Text>
-                <Feather color={theme.colors.accentPrimary} name="arrow-right" size={16} />
-              </Pressable>
-            ))}
-          </View>
-
           {hasQuery ? (
-            <View style={styles.interpretationCard}>
-              <Text style={styles.interpretationLabel}>Filtering</Text>
-              <Text style={styles.interpretationText}>Under 30 min · No onion</Text>
+            <View>
+              <View style={styles.interpretationCard}>
+                <Text style={styles.interpretationLabel}>Filtering</Text>
+                <Text style={styles.interpretationText}>
+                  {debouncedQuery.trim()}
+                </Text>
+              </View>
+
+              <Text style={styles.sectionHeading}>
+                Recipes ({results.length})
+              </Text>
+              {results.length ? (
+                <View style={styles.resultsList}>
+                  {results.map((recipe) => (
+                    <Pressable
+                      key={recipe.id}
+                      onPress={() => onOpenRecipe?.(recipe.id)}
+                      style={styles.resultRow}
+                    >
+                      <View style={styles.resultThumb} />
+                      <View style={styles.resultCopy}>
+                        <Text style={styles.resultTitle}>{recipe.title}</Text>
+                        <Text style={styles.resultMeta}>{recipe.source}</Text>
+                      </View>
+                      <Feather
+                        color={theme.colors.textTertiary}
+                        name="chevron-right"
+                        size={18}
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Feather
+                    color={theme.colors.textTertiary}
+                    name="search"
+                    size={28}
+                  />
+                  <Text style={styles.emptyTitle}>Couldn't find that</Text>
+                  <Text style={styles.emptyBody}>
+                    Try different keywords, or import a recipe with that name.
+                  </Text>
+                </View>
+              )}
             </View>
-          ) : null}
+          ) : (
+            <>
+              <View style={styles.sectionCard}>
+                <View style={styles.featuredCard}>
+                  <Text style={styles.featuredLabel}>Featured Collection</Text>
+                  <Text style={styles.featuredTitle}>{featured.title}</Text>
+                  <Text style={styles.featuredSubtitle}>{featured.subtitle}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.sectionHeading}>Browse by category</Text>
+              <FlatList
+                data={categoryCards}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.categoryRow}
+                renderItem={({ item }) => (
+                  <Pressable style={styles.categoryCard}>
+                    <View style={styles.categoryImage} />
+                    <Text style={styles.categoryTitle}>{item.title}</Text>
+                    <Text style={styles.categorySubtitle}>{item.subtitle}</Text>
+                  </Pressable>
+                )}
+              />
+
+              <Text style={styles.sectionHeading}>Smart filters</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipRow}
+              >
+                {['Under 30min', 'High Protein', 'Vegan', 'Pantry Match', 'Highly Rated'].map((label) => (
+                  <Pressable key={label} style={styles.filterChip}>
+                    <Text style={styles.filterChipText}>{label}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.sectionHeading}>Trending searches</Text>
+              <View style={styles.trendingList}>
+                {trendingSearches.map((term) => (
+                  <Pressable key={term} style={styles.trendingItem}>
+                    <Text style={styles.trendingText}>{term}</Text>
+                    <Feather color={theme.colors.accentPrimary} name="arrow-right" size={16} />
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -339,6 +411,63 @@ function createStyles(theme: AppTheme) {
       fontFamily: fonts.bodySemiBold,
       fontSize: 15,
       lineHeight: 22,
+    },
+    resultsList: {
+      gap: spacing[3],
+      marginBottom: spacing[8],
+    },
+    resultRow: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceCard,
+      borderRadius: radius.lg,
+      flexDirection: 'row',
+      gap: spacing[3],
+      padding: spacing[4],
+      ...theme.shadows.card,
+    },
+    resultThumb: {
+      backgroundColor: colors.bgTertiary,
+      borderRadius: radius.md,
+      height: 56,
+      width: 56,
+    },
+    resultCopy: {
+      flex: 1,
+      gap: spacing[1],
+    },
+    resultTitle: {
+      color: colors.textPrimary,
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    resultMeta: {
+      color: colors.textSecondary,
+      fontFamily: fonts.body,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    emptyCard: {
+      alignItems: 'center',
+      backgroundColor: colors.surfaceCard,
+      borderRadius: radius.xl,
+      gap: spacing[2],
+      padding: spacing[8],
+      ...theme.shadows.card,
+    },
+    emptyTitle: {
+      color: colors.textPrimary,
+      fontFamily: fonts.displaySemiBold,
+      fontSize: 22,
+      lineHeight: 28,
+      marginTop: spacing[3],
+    },
+    emptyBody: {
+      color: colors.textSecondary,
+      fontFamily: fonts.body,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
     },
   });
 }

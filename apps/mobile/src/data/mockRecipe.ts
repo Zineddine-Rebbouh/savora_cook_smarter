@@ -57,7 +57,7 @@ export const demoRecipe: Recipe = {
   title: 'Creamy Tuscan Chicken with Charred Lemon',
   source: 'Imported from Half Baked Harvest',
   heroImage:
-    'https://images.unsplash.com/photo-1604908176997-4318c0b5c3f1?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=1200&q=80',
   description:
     'A weeknight skillet dinner with browned chicken, garlic spinach cream sauce, and a bright lemon finish.',
   heroTag: 'Savora Pick',

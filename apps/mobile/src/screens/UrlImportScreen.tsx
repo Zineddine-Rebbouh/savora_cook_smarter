@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -82,6 +83,14 @@ export function UrlImportScreen({
     setPhase('processing');
   }
 
+  async function pasteFromClipboard() {
+    const text = await Clipboard.getStringAsync();
+
+    if (text.trim()) {
+      setUrl(text.trim());
+    }
+  }
+
   function renderContent() {
     switch (phase) {
       case 'input':
@@ -99,14 +108,10 @@ export function UrlImportScreen({
                 value={url}
               />
               <Pressable
-                onPress={() =>
-                  setUrl(
-                    'https://www.seriouseats.com/one-pot-chicken-rice-recipe',
-                  )
-                }
+                onPress={pasteFromClipboard}
                 style={styles.secondaryButton}
               >
-                <Text style={styles.secondaryButtonText}>Use clipboard URL</Text>
+                <Text style={styles.secondaryButtonText}>Paste from clipboard</Text>
               </Pressable>
             </View>
 
@@ -199,7 +204,7 @@ export function UrlImportScreen({
               <ImageBackground
                 imageStyle={styles.reviewImage}
                 source={{
-                  uri: 'https://images.unsplash.com/photo-1604908176997-4318c0b5c3f1?auto=format&fit=crop&w=1200&q=80',
+                  uri: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=1200&q=80',
                 }}
                 style={styles.reviewImage}
               >

@@ -1,7 +1,16 @@
 import { Feather } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useRecipes } from '../state/RecipesContext';
 import type { AppTheme } from '../theme';
 
 type MealPlannerScreenProps = {
@@ -15,6 +24,29 @@ const mealSlots = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
   const styles = createStyles(theme);
+  const { recipes } = useRecipes();
+  const [plan, setPlan] = useState<Record<string, string>>({});
+  const [pickingSlot, setPickingSlot] = useState<string | null>(null);
+
+  function toggleSlot(key: string) {
+    if (plan[key]) {
+      setPlan((current) => {
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
+      return;
+    }
+
+    setPickingSlot(key);
+  }
+
+  function assignRecipe(recipeId: string) {
+    if (pickingSlot) {
+      setPlan((current) => ({ ...current, [pickingSlot]: recipeId }));
+    }
+    setPickingSlot(null);
+  }
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -43,12 +75,31 @@ export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
             {weekdays.map((day) => (
               <View key={day} style={styles.dayColumn}>
                 <Text style={styles.dayHeading}>{day}</Text>
-                {mealSlots.map((slot) => (
-                  <Pressable key={slot} style={styles.slotCard}>
-                    <Text style={styles.slotLabel}>{slot}</Text>
-                    <Text style={styles.slotRecipe}>Tap to assign</Text>
-                  </Pressable>
-                ))}
+                {mealSlots.map((slot) => {
+                  const key = `${day}-${slot}`;
+                  const recipe = plan[key]
+                    ? recipes.find((item) => item.id === plan[key])
+                    : undefined;
+
+                  return (
+                    <Pressable
+                      key={slot}
+                      onPress={() => toggleSlot(key)}
+                      style={[
+                        styles.slotCard,
+                        recipe && styles.slotCardFilled,
+                      ]}
+                    >
+                      <Text style={styles.slotLabel}>{slot}</Text>
+                      <Text
+                        numberOfLines={2}
+                        style={recipe ? styles.slotRecipe : styles.slotPlaceholder}
+                      >
+                        {recipe ? recipe.title : 'Tap to assign'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             ))}
           </View>
@@ -88,6 +139,42 @@ export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setPickingSlot(null)}
+        transparent
+        visible={pickingSlot !== null}
+      >
+        <Pressable onPress={() => setPickingSlot(null)} style={styles.backdrop} />
+        <View style={styles.pickerSheet}>
+          <View style={styles.pickerHandle} />
+          <Text style={styles.pickerTitle}>Assign a recipe</Text>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {recipes.map((recipe) => (
+              <Pressable
+                key={recipe.id}
+                onPress={() => assignRecipe(recipe.id)}
+                style={({ pressed }) => [
+                  styles.pickerRow,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={styles.pickerThumb} />
+                <View style={styles.pickerCopy}>
+                  <Text style={styles.pickerName}>{recipe.title}</Text>
+                  <Text style={styles.pickerMeta}>{recipe.source}</Text>
+                </View>
+                <Feather
+                  color={theme.colors.textTertiary}
+                  name="plus"
+                  size={18}
+                />
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -183,6 +270,10 @@ function createStyles(theme: AppTheme) {
       padding: spacing[4],
       ...shadows.card,
     },
+    slotCardFilled: {
+      borderColor: colors.accentPrimary,
+      borderWidth: 1,
+    },
     slotLabel: {
       color: colors.textPrimary,
       fontFamily: fonts.bodySemiBold,
@@ -191,10 +282,85 @@ function createStyles(theme: AppTheme) {
       marginBottom: spacing[2],
     },
     slotRecipe: {
+      color: colors.textPrimary,
+      fontFamily: fonts.bodyMedium,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    slotPlaceholder: {
       color: colors.textSecondary,
       fontFamily: fonts.body,
       fontSize: 13,
       lineHeight: 18,
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: theme.colors.overlayStrong,
+    },
+    pickerSheet: {
+      backgroundColor: colors.surfaceElevated,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      bottom: 0,
+      left: 0,
+      maxHeight: '70%',
+      paddingBottom: spacing[8],
+      paddingHorizontal: spacing[5],
+      paddingTop: spacing[3],
+      position: 'absolute',
+      right: 0,
+      ...shadows.elevated,
+    },
+    pickerHandle: {
+      alignSelf: 'center',
+      backgroundColor: colors.borderStrong,
+      borderRadius: radius.pill,
+      height: 4,
+      marginBottom: spacing[4],
+      width: 44,
+    },
+    pickerTitle: {
+      color: colors.textPrimary,
+      fontFamily: fonts.displaySemiBold,
+      fontSize: 24,
+      lineHeight: 32,
+      marginBottom: spacing[4],
+    },
+    pickerRow: {
+      alignItems: 'center',
+      backgroundColor: colors.bgSecondary,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: spacing[3],
+      marginBottom: spacing[3],
+      padding: spacing[3],
+    },
+    pickerThumb: {
+      backgroundColor: colors.bgTertiary,
+      borderRadius: radius.md,
+      height: 48,
+      width: 48,
+    },
+    pickerCopy: {
+      flex: 1,
+      gap: spacing[1],
+    },
+    pickerName: {
+      color: colors.textPrimary,
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    pickerMeta: {
+      color: colors.textSecondary,
+      fontFamily: fonts.body,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    pressed: {
+      opacity: 0.7,
     },
     summaryCard: {
       backgroundColor: colors.surfaceCard,

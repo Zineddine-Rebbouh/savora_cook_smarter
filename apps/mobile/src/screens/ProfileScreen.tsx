@@ -47,6 +47,19 @@ export function ProfileScreen({ onOpenPlanner, theme }: ProfileScreenProps) {
             <View style={styles.profileCopy}>
               <Text style={styles.profileName}>Zine</Text>
               <Text style={styles.profileSince}>Cooking since April 2024</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.editPill,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Feather
+                  color={theme.colors.textSecondary}
+                  name="edit-2"
+                  size={14}
+                />
+                <Text style={styles.editPillText}>Edit Profile</Text>
+              </Pressable>
             </View>
           </View>
 
@@ -182,9 +195,28 @@ function createStyles(theme: AppTheme) {
       fontSize: 13,
       lineHeight: 18,
     },
+    editPill: {
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      backgroundColor: colors.bgSecondary,
+      borderColor: colors.borderSubtle,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: spacing[1],
+      marginTop: spacing[3],
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[1],
+    },
+    editPillText: {
+      color: colors.textSecondary,
+      fontFamily: fonts.bodyMedium,
+      fontSize: 13,
+      lineHeight: 18,
+    },
     statsRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      gap: spacing[3],
       marginBottom: spacing[5],
     },
     statCard: {
@@ -192,7 +224,8 @@ function createStyles(theme: AppTheme) {
       backgroundColor: colors.surfaceCard,
       borderRadius: radius.xl,
       flex: 1,
-      padding: spacing[4],
+      paddingHorizontal: spacing[1],
+      paddingVertical: spacing[4],
       ...shadows.card,
     },
     statValue: {
@@ -255,7 +288,7 @@ function createStyles(theme: AppTheme) {
     collectionMosaic: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: spacing[2],
+      justifyContent: 'space-between',
       marginBottom: spacing[3],
     },
     tile: {
@@ -263,6 +296,7 @@ function createStyles(theme: AppTheme) {
       borderRadius: radius.md,
       flexBasis: '48%',
       height: 48,
+      marginBottom: spacing[2],
     },
     collectionTitle: {
       color: colors.textPrimary,

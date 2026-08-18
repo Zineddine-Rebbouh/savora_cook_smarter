@@ -1,17 +1,21 @@
 import { Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { type ReactNode, useState } from 'react';
 import {
   ImageBackground,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SubstitutionSheet } from '../components/SubstitutionSheet';
 import { demoRecipe } from '../data/mockRecipe';
+import { usePantry } from '../state/PantryContext';
 import { useRecipes as useRecipeStore } from '../state/RecipesContext';
 import type { AppTheme } from '../theme';
 
@@ -28,10 +32,13 @@ export function RecipeDetailScreen({
   onStartCooking,
   recipeId,
 }: RecipeDetailScreenProps) {
-  const { getRecipeById } = useRecipeStore();
+  const { getRecipeById, isSaved, toggleSaved } = useRecipeStore();
+  const { addIngredient, hasIngredient } = usePantry();
   const recipe = getRecipeById(recipeId) ?? demoRecipe;
+  const saved = isSaved(recipe.id);
   const [servings, setServings] = useState(recipe.servings);
   const [nutritionOpen, setNutritionOpen] = useState(true);
+  const [substituteFor, setSubstituteFor] = useState<string | null>(null);
   const styles = createStyles(theme);
   const scale = servings / recipe.servings;
   const pantryProgress = recipe.pantryOwned / recipe.pantryTotal;
@@ -39,6 +46,12 @@ export function RecipeDetailScreen({
     (sum, item) => sum + item.grams,
     0,
   );
+
+  function shareRecipe() {
+    Share.share({
+      message: `${recipe.title}\n${recipe.source}\n\nSaved from Savora`,
+    });
+  }
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -64,8 +77,16 @@ export function RecipeDetailScreen({
               <View style={styles.heroTopRow}>
                 <IconButton icon="chevron-left" onPress={onBack} theme={theme} />
                 <View style={styles.heroActions}>
-                  <IconButton icon="share-2" theme={theme} />
-                  <IconButton icon="bookmark" theme={theme} />
+                  <IconButton icon="share-2" onPress={shareRecipe} theme={theme} />
+                  <IconButton
+                    active={saved}
+                    icon="bookmark"
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      toggleSaved(recipe.id);
+                    }}
+                    theme={theme}
+                  />
                 </View>
               </View>
 
@@ -112,7 +133,7 @@ export function RecipeDetailScreen({
             <View style={styles.secondaryActionsRow}>
               <SecondaryAction label="Scale Recipe" theme={theme} />
               <SecondaryAction label="Add to Plan" theme={theme} />
-              <SecondaryAction label="Share" theme={theme} />
+              <SecondaryAction label="Share" onPress={shareRecipe} theme={theme} />
             </View>
           </View>
 
@@ -139,6 +160,7 @@ export function RecipeDetailScreen({
                 <View key={ingredient} style={styles.missingChip}>
                   <Text style={styles.missingChipText}>{ingredient}</Text>
                   <Pressable
+                    onPress={() => setSubstituteFor(ingredient)}
                     style={({ pressed }) => [
                       styles.substituteButton,
                       pressed && styles.pressed,
@@ -181,7 +203,11 @@ export function RecipeDetailScreen({
           />
 
           <View style={styles.surfaceCard}>
-            {recipe.ingredients.map((ingredient, index) => (
+            {recipe.ingredients.map((ingredient, index) => {
+              const inPantry =
+                ingredient.inPantry || hasIngredient(ingredient.name);
+
+              return (
               <View
                 key={ingredient.id}
                 style={[
@@ -204,7 +230,7 @@ export function RecipeDetailScreen({
                 </View>
 
                 <View style={styles.ingredientState}>
-                  {ingredient.inPantry ? (
+                  {inPantry ? (
                     <View style={styles.pantryCheck}>
                       <Feather
                         color={theme.colors.textInverse}
@@ -213,13 +239,27 @@ export function RecipeDetailScreen({
                       />
                     </View>
                   ) : (
-                    <Pressable style={({ pressed }) => [styles.addChip, pressed && styles.pressed]}>
+                    <Pressable
+                      onPress={() =>
+                        addIngredient(
+                          ingredient.name,
+                          `${formatAmount(ingredient.amount * scale)} ${
+                            ingredient.unit || ''
+                          }`.trim(),
+                        )
+                      }
+                      style={({ pressed }) => [
+                        styles.addChip,
+                        pressed && styles.pressed,
+                      ]}
+                    >
                       <Text style={styles.addChipText}>Add</Text>
                     </Pressable>
                   )}
                 </View>
               </View>
-            ))}
+              );
+            })}
           </View>
 
           <SectionHeader
@@ -345,6 +385,12 @@ export function RecipeDetailScreen({
           </View>
         </View>
       </ScrollView>
+
+      <SubstitutionSheet
+        ingredient={substituteFor}
+        onClose={() => setSubstituteFor(null)}
+        theme={theme}
+      />
     </SafeAreaView>
   );
 }
@@ -374,10 +420,12 @@ function SectionHeader({
 }
 
 function IconButton({
+  active,
   icon,
   onPress,
   theme,
 }: {
+  active?: boolean;
   icon: keyof typeof Feather.glyphMap;
   onPress?: () => void;
   theme: AppTheme;
@@ -390,25 +438,38 @@ function IconButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.iconButton,
+        active && styles.iconButtonActive,
         pressed && styles.pressed,
       ]}
     >
-      <Feather color={theme.colors.textInverse} name={icon} size={18} />
+      <Feather
+        color={active ? theme.colors.accentPrimary : theme.colors.textInverse}
+        name={icon}
+        size={18}
+      />
     </Pressable>
   );
 }
 
 function SecondaryAction({
   label,
+  onPress,
   theme,
 }: {
   label: string;
+  onPress?: () => void;
   theme: AppTheme;
 }) {
   const styles = createStyles(theme);
 
   return (
-    <Pressable style={styles.secondaryButton}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.secondaryButton,
+        pressed && styles.pressed,
+      ]}
+    >
       <Text style={styles.secondaryButtonText}>{label}</Text>
     </Pressable>
   );
@@ -468,6 +529,10 @@ function createStyles(theme: AppTheme) {
       height: 44,
       justifyContent: 'center',
       width: 44,
+    },
+    iconButtonActive: {
+      backgroundColor: 'rgba(254, 252, 247, 0.16)',
+      borderColor: theme.colors.accentPrimary,
     },
     pressed: {
       opacity: 0.6,
