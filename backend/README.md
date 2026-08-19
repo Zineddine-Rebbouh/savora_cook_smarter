@@ -4,9 +4,8 @@ This directory is reserved for Savora's shared backend services.
 
 ## Scope
 
-- Django API
-- Django REST Framework endpoints
-- Django Channels for realtime updates
+- FastAPI API
+- PostgreSQL database (local dev via docker-compose)
 - recipe import and normalization
 - pantry and meal planner data
 - AI-assisted parsing and substitution orchestration
@@ -15,3 +14,6 @@ This directory is reserved for Savora's shared backend services.
 
 The backend should serve multiple clients, but its earliest contracts must optimize for the mobile app's cooking loop.
 
+## Known Limitations
+
+- Refresh tokens are not currently revocable server-side (a stolen refresh token stays valid until it expires).

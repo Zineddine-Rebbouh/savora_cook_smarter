@@ -4,6 +4,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -21,6 +22,12 @@ type MealPlannerScreenProps = {
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const mealSlots = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+
+const groceryItems = [
+  { item: 'Cherry tomatoes', note: 'Monday Dinner' },
+  { item: 'Greek yogurt', note: 'Tuesday Lunch' },
+  { item: 'Fresh herbs', note: 'Thursday Dinner' },
+];
 
 export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
   const styles = createStyles(theme);
@@ -46,6 +53,14 @@ export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
       setPlan((current) => ({ ...current, [pickingSlot]: recipeId }));
     }
     setPickingSlot(null);
+  }
+
+  function shareGrocery() {
+    const list = groceryItems
+      .map((entry) => `- ${entry.item} (${entry.note})`)
+      .join('\n');
+
+    Share.share({ message: `Savora shopping list:\n${list}` });
   }
 
   return (
@@ -119,15 +134,11 @@ export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
           <View style={styles.groceryCard}>
             <View style={styles.groceryHeader}>
               <Text style={styles.sectionTitle}>Grocery List</Text>
-              <Pressable style={styles.groceryAction}>
+              <Pressable onPress={shareGrocery} style={styles.groceryAction}>
                 <Text style={styles.groceryActionText}>Share</Text>
               </Pressable>
             </View>
-            {[
-              { item: 'Cherry tomatoes', note: 'Monday Dinner' },
-              { item: 'Greek yogurt', note: 'Tuesday Lunch' },
-              { item: 'Fresh herbs', note: 'Thursday Dinner' },
-            ].map((entry) => (
+            {groceryItems.map((entry) => (
               <View key={entry.item} style={styles.groceryRow}>
                 <View style={styles.checkbox} />
                 <View style={styles.groceryCopy}>

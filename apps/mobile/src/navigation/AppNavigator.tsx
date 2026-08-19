@@ -1,38 +1,41 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather } from "@expo/vector-icons";
 import {
   DefaultTheme,
   NavigationContainer,
   Theme as NavigationTheme,
-} from '@react-navigation/native';
+} from "@react-navigation/native";
 import {
   BottomTabBarButtonProps,
   createBottomTabNavigator,
-} from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+} from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useRef } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { HomeScreen } from '../screens/HomeScreen';
-import { ImportHubScreen } from '../screens/ImportHubScreen';
-import { PlaceholderScreen } from '../screens/PlaceholderScreen';
-import { ProfileScreen } from '../screens/ProfileScreen';
-import { RecipeDetailScreen } from '../screens/RecipeDetailScreen';
-import { UrlImportScreen } from '../screens/UrlImportScreen';
-import { CookingModeScreen } from '../screens/CookingModeScreen';
-import { DiscoverScreen } from '../screens/DiscoverScreen';
-import { MealPlannerScreen } from '../screens/MealPlannerScreen';
-import { OnboardingScreen } from '../screens/OnboardingScreen';
-import { PantryScreen } from '../screens/PantryScreen';
-import type { AppTheme } from '../theme';
+import { HomeScreen } from "../screens/HomeScreen";
+import { ImportHubScreen } from "../screens/ImportHubScreen";
+import { ProfileScreen } from "../screens/ProfileScreen";
+import { RecipeDetailScreen } from "../screens/RecipeDetailScreen";
+import { UrlImportScreen } from "../screens/UrlImportScreen";
+import { CookingModeScreen } from "../screens/CookingModeScreen";
+import { DiscoverScreen } from "../screens/DiscoverScreen";
+import { MealPlannerScreen } from "../screens/MealPlannerScreen";
+import { OnboardingScreen } from "../screens/OnboardingScreen";
+import { PantryScreen } from "../screens/PantryScreen";
+import { EditProfileScreen } from "../screens/EditProfileScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
+import type { AppTheme } from "../theme";
 
 type RootStackParamList = {
   ImportHub: undefined;
   MainTabs: undefined;
   RecipeDetail: { recipeId: string };
   UrlImport: undefined;
-  CookingMode: undefined;
+  CookingMode: { recipeId: string };
   MealPlanner: undefined;
   Onboarding: undefined;
+  EditProfile: undefined;
+  Settings: undefined;
 };
 
 type MainTabParamList = {
@@ -73,18 +76,20 @@ export function AppNavigator({ theme }: AppNavigatorProps) {
           {({ navigation }) => (
             <OnboardingScreen
               theme={theme}
-              onFinish={() => navigation.replace('MainTabs')}
+              onFinish={() => navigation.replace("MainTabs")}
             />
           )}
         </RootStack.Screen>
         <RootStack.Screen name="MainTabs">
           {({ navigation }) => (
             <TabNavigator
-              onOpenImport={() => navigation.navigate('ImportHub')}
+              onOpenImport={() => navigation.navigate("ImportHub")}
               onOpenRecipe={(recipeId) =>
-                navigation.navigate('RecipeDetail', { recipeId })
+                navigation.navigate("RecipeDetail", { recipeId })
               }
-              onOpenPlanner={() => navigation.navigate('MealPlanner')}
+              onOpenPlanner={() => navigation.navigate("MealPlanner")}
+              onOpenEditProfile={() => navigation.navigate("EditProfile")}
+              onOpenSettings={() => navigation.navigate("Settings")}
               theme={theme}
             />
           )}
@@ -92,8 +97,13 @@ export function AppNavigator({ theme }: AppNavigatorProps) {
         <RootStack.Screen name="RecipeDetail">
           {({ navigation, route }) => (
             <RecipeDetailScreen
+              onAddToPlan={() => navigation.navigate("MealPlanner")}
               onBack={() => navigation.goBack()}
-              onStartCooking={() => navigation.navigate('CookingMode')}
+              onStartCooking={() =>
+                navigation.navigate("CookingMode", {
+                  recipeId: route.params.recipeId,
+                })
+              }
               recipeId={route.params.recipeId}
               theme={theme}
             />
@@ -102,20 +112,21 @@ export function AppNavigator({ theme }: AppNavigatorProps) {
         <RootStack.Screen
           name="CookingMode"
           options={{
-            animation: 'slide_from_bottom',
+            animation: "slide_from_bottom",
           }}
         >
-          {({ navigation }) => (
+          {({ navigation, route }) => (
             <CookingModeScreen
-              theme={theme}
               onExit={() => navigation.goBack()}
+              recipeId={route.params.recipeId}
+              theme={theme}
             />
           )}
         </RootStack.Screen>
         <RootStack.Screen
           name="MealPlanner"
           options={{
-            animation: 'slide_from_right',
+            animation: "slide_from_right",
           }}
         >
           {({ navigation }) => (
@@ -128,15 +139,15 @@ export function AppNavigator({ theme }: AppNavigatorProps) {
         <RootStack.Screen
           name="ImportHub"
           options={{
-            animation: 'fade',
-            contentStyle: { backgroundColor: 'transparent' },
-            presentation: 'transparentModal',
+            animation: "fade",
+            contentStyle: { backgroundColor: "transparent" },
+            presentation: "transparentModal",
           }}
         >
           {({ navigation }) => (
             <ImportHubScreen
               onClose={() => navigation.goBack()}
-              onOpenUrl={() => navigation.navigate('UrlImport')}
+              onOpenUrl={() => navigation.navigate("UrlImport")}
               theme={theme}
             />
           )}
@@ -144,8 +155,8 @@ export function AppNavigator({ theme }: AppNavigatorProps) {
         <RootStack.Screen
           name="UrlImport"
           options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
+            animation: "slide_from_bottom",
+            presentation: "modal",
           }}
         >
           {({ navigation }) => (
@@ -155,13 +166,36 @@ export function AppNavigator({ theme }: AppNavigatorProps) {
                 navigation.reset({
                   index: 1,
                   routes: [
-                    { name: 'MainTabs' },
-                    { name: 'RecipeDetail', params: { recipeId } },
+                    { name: "MainTabs" },
+                    { name: "RecipeDetail", params: { recipeId } },
                   ],
                 })
               }
               theme={theme}
             />
+          )}
+        </RootStack.Screen>
+        <RootStack.Screen
+          name="EditProfile"
+          options={{
+            animation: "slide_from_right",
+          }}
+        >
+          {({ navigation }) => (
+            <EditProfileScreen
+              onBack={() => navigation.goBack()}
+              theme={theme}
+            />
+          )}
+        </RootStack.Screen>
+        <RootStack.Screen
+          name="Settings"
+          options={{
+            animation: "slide_from_right",
+          }}
+        >
+          {({ navigation }) => (
+            <SettingsScreen onBack={() => navigation.goBack()} theme={theme} />
           )}
         </RootStack.Screen>
       </RootStack.Navigator>
@@ -173,11 +207,15 @@ function TabNavigator({
   onOpenImport,
   onOpenRecipe,
   onOpenPlanner,
+  onOpenEditProfile,
+  onOpenSettings,
   theme,
 }: {
   onOpenImport: () => void;
   onOpenRecipe: (recipeId: string) => void;
   onOpenPlanner: () => void;
+  onOpenEditProfile: () => void;
+  onOpenSettings: () => void;
   theme: AppTheme;
 }) {
   const styles = createStyles(theme);
@@ -206,32 +244,37 @@ function TabNavigator({
         ),
       })}
     >
-      <Tab.Screen name="Home" options={{ title: 'Home' }}>
+      <Tab.Screen name="Home" options={{ title: "Home" }}>
         {() => <HomeScreen onOpenRecipe={onOpenRecipe} theme={theme} />}
       </Tab.Screen>
-      <Tab.Screen name="Discover" options={{ title: 'Discover' }}>
+      <Tab.Screen name="Discover" options={{ title: "Discover" }}>
         {() => <DiscoverScreen onOpenRecipe={onOpenRecipe} theme={theme} />}
       </Tab.Screen>
       <Tab.Screen
         name="Add"
         options={{
-          title: 'Add',
+          title: "Add",
           tabBarButton: (props) => (
-            <AddTabButton
-              onPress={onOpenImport}
-              props={props}
-              theme={theme}
-            />
+            <AddTabButton onPress={onOpenImport} props={props} theme={theme} />
           ),
         }}
       >
-        {() => <View style={{ backgroundColor: theme.colors.bgPrimary, flex: 1 }} />}
+        {() => (
+          <View style={{ backgroundColor: theme.colors.bgPrimary, flex: 1 }} />
+        )}
       </Tab.Screen>
-      <Tab.Screen name="Pantry" options={{ title: 'Pantry' }}>
+      <Tab.Screen name="Pantry" options={{ title: "Pantry" }}>
         {() => <PantryScreen theme={theme} />}
       </Tab.Screen>
-      <Tab.Screen name="Profile" options={{ title: 'Profile' }}>
-        {() => <ProfileScreen onOpenPlanner={onOpenPlanner} theme={theme} />}
+      <Tab.Screen name="Profile" options={{ title: "Profile" }}>
+        {() => (
+          <ProfileScreen
+            onOpenPlanner={onOpenPlanner}
+            onOpenEditProfile={onOpenEditProfile}
+            onOpenSettings={onOpenSettings}
+            theme={theme}
+          />
+        )}
       </Tab.Screen>
     </Tab.Navigator>
   );
@@ -244,18 +287,18 @@ function getTabIcon(
   focused: boolean,
 ): keyof typeof Feather.glyphMap {
   switch (routeName) {
-    case 'Home':
-      return focused ? 'home' : 'home';
-    case 'Discover':
-      return 'search';
-    case 'Add':
-      return 'plus';
-    case 'Pantry':
-      return 'archive';
-    case 'Profile':
-      return 'user';
+    case "Home":
+      return focused ? "home" : "home";
+    case "Discover":
+      return "search";
+    case "Add":
+      return "plus";
+    case "Pantry":
+      return "archive";
+    case "Profile":
+      return "user";
     default:
-      return 'circle';
+      return "circle";
   }
 }
 
@@ -322,8 +365,8 @@ function AddTabButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={({ pressed }) => [
-        styles.addButtonShell,
         style,
+        styles.addButtonShell,
         { opacity: pressed ? 0.85 : 1, transform: [{ scale }] },
       ]}
       testID={testID}
@@ -346,30 +389,36 @@ function createStyles(theme: AppTheme) {
       height: 84,
       paddingBottom: 10,
       paddingTop: 8,
+      flexDirection: "row",
+      justifyContent: "center",
     },
     tabBarItem: {
+      alignItems: "center",
+      flex: 1,
+      justifyContent: "center",
       paddingTop: 2,
     },
     addButtonShell: {
-      alignItems: 'center',
+      alignItems: "center",
+      alignSelf: "stretch",
       flex: 1,
-      justifyContent: 'center',
-      marginTop: -18,
+      justifyContent: "center",
+      width: "100%",
     },
     addButton: {
-      alignItems: 'center',
+      alignItems: "center",
       backgroundColor: colors.accentPrimary,
       borderRadius: radius.pill,
-      height: 56,
-      justifyContent: 'center',
-      width: 56,
+      height: 48,
+      justifyContent: "center",
+      width: 48,
       ...shadows.elevated,
     },
     addLabel: {
       color: colors.textSecondary,
       fontFamily: theme.fonts.bodyMedium,
       fontSize: 11,
-      marginTop: 6,
+      marginTop: 4,
     },
   });
 }

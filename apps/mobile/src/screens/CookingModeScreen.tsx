@@ -12,37 +12,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useVoiceCommands } from '../native/useVoiceCommands';
+import { demoRecipe } from '../data/mockRecipe';
+import { useRecipes } from '../state/RecipesContext';
 import type { AppTheme } from '../theme';
 
 type CookingModeScreenProps = {
   onExit: () => void;
+  recipeId: string;
   theme: AppTheme;
 };
 
-const steps = [
-  {
-    title: 'Heat the pan over medium heat with oil',
-    note: 'Use a heavy skillet',
-    timer: null,
-  },
-  {
-    title: 'Add garlic and cook until fragrant',
-    note: null,
-    timer: 2,
-  },
-  {
-    title: 'Stir in tomatoes and simmer for 12 minutes',
-    note: 'Keep the lid slightly ajar',
-    timer: 12,
-  },
-  {
-    title: 'Fold in spinach and finish with lemon zest',
-    note: null,
-    timer: null,
-  },
-];
-
-const quickGlance = ['2 cloves garlic', '1 lemon', '120g spinach'];
+type Step = {
+  title: string;
+  note: string | null;
+  timer: number | null;
+};
 
 type VoiceCommand =
   | { kind: 'next' }
@@ -68,9 +52,24 @@ function matchCommand(text: string): VoiceCommand {
   return howMuch ? { kind: 'howMuch', ingredient: howMuch[1].trim() } : null;
 }
 
-export function CookingModeScreen({ onExit, theme }: CookingModeScreenProps) {
+export function CookingModeScreen({ onExit, recipeId, theme }: CookingModeScreenProps) {
   useKeepAwake();
   const { isSupported, isListening, partial, results, start, stop } = useVoiceCommands();
+  const { getRecipeById } = useRecipes();
+  const recipe = getRecipeById(recipeId) ?? demoRecipe;
+  const steps: Step[] = recipe.steps.length
+    ? recipe.steps.map((step) => ({
+        title: step.instruction,
+        note: step.linkedRecipe ? `${step.linkedRecipe} ->` : null,
+        timer: step.timerMinutes ?? null,
+      }))
+    : [{ title: 'No steps for this recipe yet', note: null, timer: null }];
+  const quickGlance = recipe.ingredients.map(
+    (ingredient) =>
+      `${formatAmount(ingredient.amount)}${
+        ingredient.unit ? ` ${ingredient.unit}` : ''
+      } ${ingredient.name}`.trim(),
+  );
   const [currentStep, setCurrentStep] = useState(1);
   const [timer, setTimer] = useState<{ minutes: number; remaining: number } | null>(null);
   const [voiceMessage, setVoiceMessage] = useState<string | null>(null);
@@ -164,7 +163,7 @@ export function CookingModeScreen({ onExit, theme }: CookingModeScreenProps) {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.modeLabel}>Savora cooking mode</Text>
-            <Text style={styles.recipeName}>Creamy Tuscan Chicken</Text>
+            <Text style={styles.recipeName}>{recipe.title}</Text>
           </View>
           <View style={styles.exitPill}>
             <Pressable onPress={onExit} style={styles.exitButton}>
@@ -259,6 +258,16 @@ function formatTimer(totalSeconds: number) {
   const seconds = totalSeconds % 60;
 
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function formatAmount(value: number) {
+  if (Number.isInteger(value)) {
+    return `${value}`;
+  }
+
+  const rounded = Math.round(value * 100) / 100;
+
+  return `${rounded}`.replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
 }
 
 function createStyles(theme: AppTheme) {
@@ -413,7 +422,7 @@ function createStyles(theme: AppTheme) {
     },
     voicePulse: {
       borderColor: colors.textInverse,
-      borderRadius: 999,
+      borderRadius: radius.pill,
       borderWidth: 1,
       height: 56,
       position: 'absolute',

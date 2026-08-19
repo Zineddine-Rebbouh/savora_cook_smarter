@@ -200,7 +200,7 @@ export function DiscoverScreen({ onOpenRecipe, theme }: DiscoverScreenProps) {
               <Text style={styles.sectionHeading}>Trending searches</Text>
               <View style={styles.trendingList}>
                 {trendingSearches.map((term) => (
-                  <Pressable key={term} style={styles.trendingItem}>
+                  <Pressable key={term} onPress={() => setQuery(term)} style={styles.trendingItem}>
                     <Text style={styles.trendingText}>{term}</Text>
                     <Feather color={theme.colors.accentPrimary} name="arrow-right" size={16} />
                   </Pressable>
@@ -256,7 +256,7 @@ function createStyles(theme: AppTheme) {
     },
     filterDot: {
       backgroundColor: colors.accentPrimary,
-      borderRadius: 50,
+      borderRadius: radius.pill,
       height: 8,
       position: 'absolute',
       right: 10,

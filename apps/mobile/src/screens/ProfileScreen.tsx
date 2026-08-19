@@ -6,6 +6,8 @@ import type { AppTheme } from '../theme';
 
 type ProfileScreenProps = {
   onOpenPlanner: () => void;
+  onOpenEditProfile: () => void;
+  onOpenSettings: () => void;
   theme: AppTheme;
 };
 
@@ -30,7 +32,12 @@ const settings = [
   'Offline Storage',
 ];
 
-export function ProfileScreen({ onOpenPlanner, theme }: ProfileScreenProps) {
+export function ProfileScreen({
+  onOpenPlanner,
+  onOpenEditProfile,
+  onOpenSettings,
+  theme,
+}: ProfileScreenProps) {
   const styles = createStyles(theme);
 
   return (
@@ -48,6 +55,7 @@ export function ProfileScreen({ onOpenPlanner, theme }: ProfileScreenProps) {
               <Text style={styles.profileName}>Zine</Text>
               <Text style={styles.profileSince}>Cooking since April 2024</Text>
               <Pressable
+                onPress={onOpenEditProfile}
                 style={({ pressed }) => [
                   styles.editPill,
                   pressed && styles.pressed,
@@ -127,6 +135,7 @@ export function ProfileScreen({ onOpenPlanner, theme }: ProfileScreenProps) {
             {settings.map((item, index) => (
               <Pressable
                 key={item}
+                onPress={onOpenSettings}
                 style={({ pressed }) => [
                   styles.settingsRow,
                   index === settings.length - 1 && styles.rowLast,
@@ -161,17 +170,18 @@ function createStyles(theme: AppTheme) {
       paddingTop: spacing[6],
     },
     headerRow: {
-      alignItems: 'center',
+      alignItems: 'flex-start',
       flexDirection: 'row',
       marginBottom: spacing[6],
     },
     avatarLarge: {
       alignItems: 'center',
       backgroundColor: colors.bgDark,
-      borderRadius: 60,
+      borderRadius: radius.pill,
       height: 120,
       justifyContent: 'center',
       width: 120,
+      marginRight: spacing[5],
     },
     avatarLargeText: {
       color: colors.textInverse,

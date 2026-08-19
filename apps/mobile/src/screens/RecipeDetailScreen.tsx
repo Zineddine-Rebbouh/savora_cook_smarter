@@ -20,6 +20,7 @@ import { useRecipes as useRecipeStore } from '../state/RecipesContext';
 import type { AppTheme } from '../theme';
 
 type RecipeDetailScreenProps = {
+  onAddToPlan?: () => void;
   onBack: () => void;
   onStartCooking?: () => void;
   recipeId: string;
@@ -27,6 +28,7 @@ type RecipeDetailScreenProps = {
 };
 
 export function RecipeDetailScreen({
+  onAddToPlan,
   onBack,
   theme,
   onStartCooking,
@@ -131,8 +133,7 @@ export function RecipeDetailScreen({
             </Pressable>
 
             <View style={styles.secondaryActionsRow}>
-              <SecondaryAction label="Scale Recipe" theme={theme} />
-              <SecondaryAction label="Add to Plan" theme={theme} />
+              <SecondaryAction label="Add to Plan" onPress={onAddToPlan} theme={theme} />
               <SecondaryAction label="Share" onPress={shareRecipe} theme={theme} />
             </View>
           </View>
@@ -522,8 +523,8 @@ function createStyles(theme: AppTheme) {
     },
     iconButton: {
       alignItems: 'center',
-      backgroundColor: 'rgba(28, 24, 20, 0.32)',
-      borderColor: 'rgba(254, 252, 247, 0.24)',
+      backgroundColor: colors.imageScrim,
+      borderColor: colors.imageBorderLight,
       borderRadius: radius.pill,
       borderWidth: 1,
       height: 44,

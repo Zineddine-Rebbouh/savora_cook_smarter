@@ -24,6 +24,9 @@ type Palette = {
   warningText: string;
   warningSurface: string;
   overlayStrong: string;
+  imageScrim: string;
+  imageBorderLight: string;
+  chipOnImage: string;
   heroGradientTop: string;
   heroGradientBottom: string;
 };
@@ -53,6 +56,9 @@ const palettes: Record<ThemeMode, Palette> = {
     warningText: '#1C1814',
     warningSurface: '#FDF1E4',
     overlayStrong: 'rgba(28, 24, 20, 0.42)',
+    imageScrim: 'rgba(28, 24, 20, 0.30)',
+    imageBorderLight: 'rgba(254, 252, 247, 0.24)',
+    chipOnImage: 'rgba(254, 252, 247, 0.14)',
     heroGradientTop: 'rgba(28, 24, 20, 0.06)',
     heroGradientBottom: 'rgba(28, 24, 20, 0.88)',
   },
@@ -80,6 +86,9 @@ const palettes: Record<ThemeMode, Palette> = {
     warningText: '#1C1814',
     warningSurface: '#3A2D20',
     overlayStrong: 'rgba(28, 24, 20, 0.6)',
+    imageScrim: 'rgba(28, 24, 20, 0.30)',
+    imageBorderLight: 'rgba(254, 252, 247, 0.24)',
+    chipOnImage: 'rgba(254, 252, 247, 0.14)',
     heroGradientTop: 'rgba(28, 24, 20, 0.12)',
     heroGradientBottom: 'rgba(28, 24, 20, 0.94)',
   },

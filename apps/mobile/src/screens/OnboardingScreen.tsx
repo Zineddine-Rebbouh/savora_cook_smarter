@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRef, useState } from 'react';
 import {
   FlatList,
@@ -67,59 +68,72 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
     );
   }
 
+  function advanceSlide() {
+    if (index === slides.length - 1) {
+      setStage('account');
+      return;
+    }
+
+    const nextIndex = index + 1;
+    setIndex(nextIndex);
+    scrollRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+  }
+
   if (stage === 'account') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         <View style={styles.pagePadding}>
-          <Text style={styles.accountTitle}>Set up your cookbook</Text>
-          <Text style={styles.accountSubtitle}>
-            Tell us how you eat. Set these now, skip forever.
-          </Text>
+          <View style={styles.accountContent}>
+            <Text style={styles.accountTitle}>Set up your cookbook</Text>
+            <Text style={styles.accountSubtitle}>
+              Tell us how you eat. Set these now, skip forever.
+            </Text>
 
-          <TextInput
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            onChangeText={setEmail}
-            placeholder="Email"
-            placeholderTextColor={theme.colors.textTertiary}
-            style={styles.input}
-            value={email}
-          />
-          <TextInput
-            autoCapitalize="none"
-            autoComplete="password"
-            onChangeText={setPassword}
-            placeholder="Password"
-            placeholderTextColor={theme.colors.textTertiary}
-            secureTextEntry
-            style={styles.input}
-            value={password}
-          />
+            <TextInput
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              onChangeText={setEmail}
+              placeholder="Email"
+              placeholderTextColor={theme.colors.textTertiary}
+              style={styles.input}
+              value={email}
+            />
+            <TextInput
+              autoCapitalize="none"
+              autoComplete="password"
+              onChangeText={setPassword}
+              placeholder="Password"
+              placeholderTextColor={theme.colors.textTertiary}
+              secureTextEntry
+              style={styles.input}
+              value={password}
+            />
 
-          <Text style={styles.dietLabel}>Dietary preferences</Text>
-          <View style={styles.dietRow}>
-            {dietaryPreferences.map((label) => {
-              const active = selectedDiets.includes(label);
+            <Text style={styles.dietLabel}>Dietary preferences</Text>
+            <View style={styles.dietRow}>
+              {dietaryPreferences.map((label) => {
+                const active = selectedDiets.includes(label);
 
-              return (
-                <Pressable
-                  key={label}
-                  onPress={() => toggleDiet(label)}
-                  style={[styles.dietChip, active && styles.dietChipActive]}
-                >
-                  <Text style={[styles.dietChipText, active && styles.dietChipTextActive]}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                return (
+                  <Pressable
+                    key={label}
+                    onPress={() => toggleDiet(label)}
+                    style={[styles.dietChip, active && styles.dietChipActive]}
+                  >
+                    <Text style={[styles.dietChipText, active && styles.dietChipTextActive]}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
 
           <Pressable
             onPress={onFinish}
             style={({ pressed }) => [
-              styles.ctaButton,
+              styles.accountCtaButton,
               styles.ctaSpacing,
               pressed && styles.pressed,
             ]}
@@ -136,18 +150,27 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-      <View style={styles.heroShell}>
+      <LinearGradient
+        colors={[theme.colors.bgDark, theme.colors.bgDarkSecondary]}
+        style={styles.heroShell}
+      >
         <Pressable onPress={() => setStage('account')} style={styles.skipLink}>
           <Text style={styles.skipLinkText}>Skip</Text>
         </Pressable>
         <View style={styles.heroContent}>
-          <View style={styles.logoShell}>
-            <Text style={styles.logo}>S</Text>
+          <View style={styles.brandRow}>
+            <View style={styles.logoShell}>
+              <Text style={styles.logo}>S</Text>
+            </View>
+            <View>
+              <Text style={styles.appName}>Savora</Text>
+              <Text style={styles.brandLabel}>YOUR POCKET COOKBOOK</Text>
+            </View>
           </View>
-          <Text style={styles.appName}>Savora</Text>
           <Text style={styles.tagline}>Cook smarter. Waste less. Eat better.</Text>
         </View>
-      </View>
+        <View style={styles.heroAccent} />
+      </LinearGradient>
 
       <View style={styles.carouselShell}>
         <FlatList
@@ -163,10 +186,21 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
             );
             setIndex(newIndex);
           }}
-          renderItem={({ item }) => (
+          renderItem={({ item, index: slideIndex }) => (
             <View style={[styles.slide, { width }]}>
+              <View style={styles.slideEyebrow}>
+                <Text style={styles.slideNumber}>0{slideIndex + 1}</Text>
+                <View style={styles.eyebrowLine} />
+                <Text style={styles.slideLabel}>SAVORA FEATURES</Text>
+              </View>
               <View style={styles.illustrationShell}>
-                <Feather color={theme.colors.accentSecondary} name={item.icon} size={48} />
+                <View style={styles.illustrationHalo} />
+                <View style={styles.illustrationIcon}>
+                  <Feather color={theme.colors.textInverse} name={item.icon} size={42} />
+                </View>
+                <View style={styles.illustrationBadge}>
+                  <Feather color={theme.colors.textInverse} name="check" size={14} />
+                </View>
               </View>
               <Text style={styles.slideTitle}>{item.title}</Text>
               <Text style={styles.slideText}>{item.subtitle}</Text>
@@ -176,22 +210,23 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.dotsRow}>
-          {slides.map((_, slideIndex) => (
-            <View
-              key={slideIndex}
-              style={[
-                styles.dot,
-                slideIndex === index && styles.dotActive,
-              ]}
-            />
-          ))}
+        <View style={styles.progressRow}>
+          <View style={styles.dotsRow}>
+            {slides.map((_, slideIndex) => (
+              <View
+                key={slideIndex}
+                style={[styles.dot, slideIndex === index && styles.dotActive]}
+              />
+            ))}
+          </View>
+          <Text style={styles.progressText}>{String(index + 1).padStart(2, '0')} / 03</Text>
         </View>
         <Pressable
-          onPress={() => setStage('account')}
+          onPress={advanceSlide}
           style={styles.ctaButton}
         >
-          <Text style={styles.ctaText}>Get Started</Text>
+          <Text style={styles.ctaText}>{index === slides.length - 1 ? 'Get Started' : 'Next'}</Text>
+          <Feather color={theme.colors.textInverse} name="arrow-right" size={18} />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -210,6 +245,11 @@ function createStyles(theme: AppTheme) {
       flex: 1,
       paddingHorizontal: spacing[5],
       paddingTop: spacing[10],
+      paddingBottom: spacing[6],
+    },
+    accountContent: {
+      flex: 1,
+      justifyContent: 'center',
     },
     accountTitle: {
       color: colors.textPrimary,
@@ -273,6 +313,15 @@ function createStyles(theme: AppTheme) {
     dietChipTextActive: {
       color: colors.textInverse,
     },
+    accountCtaButton: {
+      alignItems: 'center',
+      alignSelf: 'center',
+      backgroundColor: colors.accentPrimary,
+      borderRadius: radius.xl,
+      height: 52,
+      justifyContent: 'center',
+      width: '90%',
+    },
     ctaSpacing: {
       marginTop: 'auto',
     },
@@ -293,7 +342,6 @@ function createStyles(theme: AppTheme) {
     },
     heroShell: {
       alignItems: 'center',
-      backgroundColor: colors.surfaceCard,
       flex: 1,
       justifyContent: 'center',
       paddingHorizontal: spacing[5],
@@ -308,7 +356,7 @@ function createStyles(theme: AppTheme) {
       zIndex: 1,
     },
     skipLinkText: {
-      color: colors.textTertiary,
+      color: colors.textInverse,
       fontFamily: fonts.bodyMedium,
       fontSize: 14,
       lineHeight: 18,
@@ -317,6 +365,27 @@ function createStyles(theme: AppTheme) {
       alignItems: 'center',
       gap: spacing[3],
       marginTop: spacing[8],
+    },
+    brandRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing[4],
+    },
+    brandLabel: {
+      color: colors.accentSecondary,
+      fontFamily: fonts.monoMedium,
+      fontSize: 9,
+      letterSpacing: 1.2,
+      marginTop: spacing[1],
+    },
+    heroAccent: {
+      backgroundColor: colors.accentPrimary,
+      borderRadius: radius.pill,
+      bottom: spacing[6],
+      height: 4,
+      left: spacing[6],
+      position: 'absolute',
+      width: 48,
     },
     logoShell: {
       alignItems: 'center',
@@ -335,9 +404,8 @@ function createStyles(theme: AppTheme) {
     appName: {
       color: colors.textPrimary,
       fontFamily: fonts.displayLight,
-      fontSize: 42,
-      lineHeight: 50,
-      marginTop: spacing[4],
+      fontSize: 32,
+      lineHeight: 38,
     },
     tagline: {
       color: colors.textTertiary,
@@ -349,28 +417,87 @@ function createStyles(theme: AppTheme) {
       maxWidth: 280,
     },
     carouselShell: {
+      backgroundColor: colors.bgPrimary,
       flex: 1,
     },
     slide: {
       alignItems: 'center',
       flex: 1,
-      justifyContent: 'center',
-      paddingHorizontal: spacing[5],
+      justifyContent: 'flex-start',
+      paddingHorizontal: spacing[6],
+      paddingTop: spacing[6],
+    },
+    slideEyebrow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: spacing[2],
+      marginBottom: spacing[4],
+      width: '100%',
+    },
+    slideNumber: {
+      color: colors.accentPrimary,
+      fontFamily: fonts.monoMedium,
+      fontSize: 12,
+    },
+    eyebrowLine: {
+      backgroundColor: colors.borderSubtle,
+      flex: 1,
+      height: 1,
+    },
+    slideLabel: {
+      color: colors.textTertiary,
+      fontFamily: fonts.monoMedium,
+      fontSize: 10,
+      letterSpacing: 1,
     },
     illustrationShell: {
       alignItems: 'center',
-      backgroundColor: colors.bgSecondary,
+      backgroundColor: colors.bgDark,
       borderRadius: radius.xl,
-      height: 220,
+      height: 190,
       justifyContent: 'center',
       marginBottom: spacing[6],
+      overflow: 'hidden',
+      position: 'relative',
       width: '100%',
+    },
+    illustrationHalo: {
+      backgroundColor: colors.bgDarkSecondary,
+      borderColor: colors.accentPrimary,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      height: 156,
+      opacity: 0.75,
+      position: 'absolute',
+      width: 156,
+    },
+    illustrationIcon: {
+      alignItems: 'center',
+      backgroundColor: colors.accentPrimary,
+      borderRadius: radius.xl,
+      height: 84,
+      justifyContent: 'center',
+      transform: [{ rotate: '-8deg' }],
+      width: 84,
+    },
+    illustrationBadge: {
+      alignItems: 'center',
+      backgroundColor: colors.accentSecondary,
+      borderColor: colors.bgDark,
+      borderRadius: radius.pill,
+      borderWidth: 4,
+      bottom: 40,
+      height: 30,
+      justifyContent: 'center',
+      position: 'absolute',
+      right: '28%',
+      width: 30,
     },
     slideTitle: {
       color: colors.textPrimary,
       fontFamily: fonts.displaySemiBold,
       fontSize: 32,
-      lineHeight: 40,
+      lineHeight: 38,
       marginBottom: spacing[3],
       textAlign: 'center',
     },
@@ -384,14 +511,26 @@ function createStyles(theme: AppTheme) {
     },
     footer: {
       alignItems: 'center',
-      backgroundColor: colors.surfaceCard,
+      backgroundColor: colors.bgPrimary,
+      paddingHorizontal: spacing[6],
       paddingBottom: spacing[8],
-      paddingTop: spacing[4],
+      paddingTop: spacing[2],
+    },
+    progressRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: spacing[5],
+      width: '100%',
     },
     dotsRow: {
       flexDirection: 'row',
       gap: spacing[3],
-      marginBottom: spacing[6],
+    },
+    progressText: {
+      color: colors.textTertiary,
+      fontFamily: fonts.monoMedium,
+      fontSize: 11,
     },
     dot: {
       backgroundColor: colors.bgTertiary,
@@ -409,7 +548,9 @@ function createStyles(theme: AppTheme) {
       borderRadius: radius.xl,
       height: 52,
       justifyContent: 'center',
-      width: '90%',
+      flexDirection: 'row',
+      gap: spacing[3],
+      width: '100%',
     },
     ctaText: {
       color: colors.textInverse,

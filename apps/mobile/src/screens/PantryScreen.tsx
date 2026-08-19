@@ -2,15 +2,17 @@ import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
   FlatList,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { usePantry } from '../state/PantryContext';
+import { usePantry, type PantryItem } from '../state/PantryContext';
 import type { AppTheme } from '../theme';
 
 type PantryScreenProps = {
@@ -21,8 +23,32 @@ const categories = ['All', 'Produce', 'Dairy', 'Meat', 'Pantry', 'Freezer'];
 
 export function PantryScreen({ theme }: PantryScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const { items } = usePantry();
+  const [editing, setEditing] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newQuantity, setNewQuantity] = useState('');
+  const [newCategory, setNewCategory] = useState('Produce');
+  const { items, addIngredient, removeItem } = usePantry();
   const styles = createStyles(theme);
+
+  const visibleItems =
+    selectedCategory === 'All'
+      ? items
+      : items.filter((item) => item.category === selectedCategory);
+
+  function submitItem() {
+    const name = newName.trim();
+
+    if (!name) {
+      return;
+    }
+
+    addIngredient(name, newQuantity.trim() || '1x', newCategory);
+    setNewName('');
+    setNewQuantity('');
+    setNewCategory('Produce');
+    setModalOpen(false);
+  }
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -38,14 +64,18 @@ export function PantryScreen({ theme }: PantryScreenProps) {
             </View>
             <View style={styles.headerActions}>
               <Pressable
+                onPress={() => setEditing((value) => !value)}
                 style={({ pressed }) => [
                   styles.actionPill,
                   pressed && styles.pressed,
                 ]}
               >
-                <Text style={styles.actionPillText}>Edit</Text>
+                <Text style={styles.actionPillText}>
+                  {editing ? 'Done' : 'Edit'}
+                </Text>
               </Pressable>
               <Pressable
+                onPress={() => setModalOpen(true)}
                 style={({ pressed }) => [
                   styles.primaryPill,
                   pressed && styles.pressed,
@@ -104,36 +134,139 @@ export function PantryScreen({ theme }: PantryScreenProps) {
           </Pressable>
 
           <Text style={styles.gridHeading}>Ingredients</Text>
+          {editing ? (
+            <Text style={styles.editHint}>Tap an item to remove it from your pantry</Text>
+          ) : null}
           <FlatList
-            data={items}
+            data={visibleItems}
             numColumns={3}
             scrollEnabled={false}
             keyExtractor={(item) => item.id}
             columnWrapperStyle={styles.gridRow}
             renderItem={({ item }) => (
-              <View style={styles.ingredientCard}>
-                <View style={styles.ingredientIcon} />
-                <Text style={styles.ingredientName}>{item.name}</Text>
-                <Text style={styles.ingredientQuantity}>{item.quantity}</Text>
-                <View style={styles.ingredientFooter}>
-                  <View
-                    style={[
-                      styles.expiryDot,
-                      item.alert === 'high'
-                        ? styles.expiryHigh
-                        : item.alert === 'medium'
-                        ? styles.expiryMedium
-                        : styles.expiryLow,
-                    ]}
-                  />
-                  <Text style={styles.expiryText}>{item.expiry}</Text>
-                </View>
-              </View>
+              <IngredientCard
+                editing={editing}
+                item={item}
+                onRemove={() => removeItem(item.id)}
+                theme={theme}
+              />
             )}
           />
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setModalOpen(false)}
+        transparent
+        visible={modalOpen}
+      >
+        <Pressable onPress={() => setModalOpen(false)} style={styles.backdrop} />
+        <View style={styles.addSheet}>
+          <View style={styles.handle} />
+          <Text style={styles.addTitle}>Add to Pantry</Text>
+
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={setNewName}
+            placeholder="Item name"
+            placeholderTextColor={theme.colors.textTertiary}
+            style={styles.input}
+            value={newName}
+          />
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={setNewQuantity}
+            placeholder="Quantity (e.g. 2 pcs, 400g)"
+            placeholderTextColor={theme.colors.textTertiary}
+            style={styles.input}
+            value={newQuantity}
+          />
+
+          <Text style={styles.addCategoryLabel}>Category</Text>
+          <ScrollView
+            contentContainerStyle={styles.categoryRow}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          >
+            {categories.filter((category) => category !== 'All').map((category) => (
+              <Pressable
+                key={category}
+                onPress={() => setNewCategory(category)}
+                style={[
+                  styles.categoryChip,
+                  newCategory === category && styles.categoryChipActive,
+                ]}
+              >
+                <Text
+                  style={
+                    newCategory === category
+                      ? styles.categoryChipTextActive
+                      : styles.categoryChipText
+                  }
+                >
+                  {category}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          <Pressable
+            disabled={!newName.trim()}
+            onPress={submitItem}
+            style={({ pressed }) => [
+              styles.addButton,
+              !newName.trim() && styles.addButtonDisabled,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.addButtonText}>Add Item</Text>
+          </Pressable>
+        </View>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+function IngredientCard({
+  editing,
+  item,
+  onRemove,
+  theme,
+}: {
+  editing: boolean;
+  item: PantryItem;
+  onRemove: () => void;
+  theme: AppTheme;
+}) {
+  const styles = createStyles(theme);
+
+  return (
+    <Pressable disabled={!editing} onPress={onRemove} style={styles.ingredientCard}>
+      {editing ? (
+        <View style={styles.removeBadge}>
+          <Feather color={theme.colors.textInverse} name="x" size={10} />
+        </View>
+      ) : null}
+      <View style={styles.ingredientIcon} />
+      <Text style={styles.ingredientName}>{item.name}</Text>
+      <Text style={styles.ingredientQuantity}>{item.quantity}</Text>
+      <View style={styles.ingredientFooter}>
+        <View
+          style={[
+            styles.expiryDot,
+            item.alert === 'high'
+              ? styles.expiryHigh
+              : item.alert === 'medium'
+              ? styles.expiryMedium
+              : styles.expiryLow,
+          ]}
+        />
+        <Text style={styles.expiryText}>{item.expiry}</Text>
+      </View>
+    </Pressable>
   );
 }
 
@@ -351,6 +484,97 @@ function createStyles(theme: AppTheme) {
       fontFamily: fonts.body,
       fontSize: 11,
       lineHeight: 16,
+    },
+    editHint: {
+      color: colors.textSecondary,
+      fontFamily: fonts.body,
+      fontSize: 13,
+      lineHeight: 18,
+      marginBottom: spacing[4],
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: theme.colors.overlayStrong,
+    },
+    addSheet: {
+      backgroundColor: colors.surfaceElevated,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      bottom: 0,
+      left: 0,
+      paddingHorizontal: spacing[5],
+      paddingTop: spacing[3],
+      paddingBottom: spacing[8],
+      position: 'absolute',
+      right: 0,
+      ...theme.shadows.elevated,
+    },
+    handle: {
+      alignSelf: 'center',
+      backgroundColor: colors.borderStrong,
+      borderRadius: radius.pill,
+      height: 4,
+      marginBottom: spacing[4],
+      width: 44,
+    },
+    addTitle: {
+      color: colors.textPrimary,
+      fontFamily: fonts.displaySemiBold,
+      fontSize: 24,
+      lineHeight: 32,
+      marginBottom: spacing[4],
+    },
+    input: {
+      backgroundColor: colors.surfaceCard,
+      borderColor: colors.borderStrong,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      color: colors.textPrimary,
+      fontFamily: fonts.body,
+      fontSize: 15,
+      lineHeight: 22,
+      marginBottom: spacing[3],
+      minHeight: 52,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
+    },
+    addCategoryLabel: {
+      color: colors.textPrimary,
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: spacing[3],
+    },
+    addButton: {
+      alignItems: 'center',
+      backgroundColor: colors.accentPrimary,
+      borderRadius: radius.pill,
+      justifyContent: 'center',
+      marginTop: spacing[4],
+      minHeight: 54,
+      paddingHorizontal: spacing[4],
+      ...theme.shadows.elevated,
+    },
+    addButtonDisabled: {
+      opacity: 0.52,
+    },
+    addButtonText: {
+      color: colors.textInverse,
+      fontFamily: fonts.bodySemiBold,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    removeBadge: {
+      alignItems: 'center',
+      backgroundColor: colors.accentDanger,
+      borderRadius: radius.pill,
+      height: 22,
+      justifyContent: 'center',
+      position: 'absolute',
+      right: spacing[2],
+      top: spacing[2],
+      width: 22,
+      zIndex: 1,
     },
   });
 }

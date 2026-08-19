@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 import { demoRecipe, initialRecipes, type Recipe } from '../data/mockRecipe';
+import { usePersistedState } from './usePersistedState';
 
 type RecipeState = {
   recipes: Recipe[];
@@ -14,8 +15,14 @@ type RecipeState = {
 const RecipesContext = createContext<RecipeState | undefined>(undefined);
 
 export function RecipesProvider({ children }: { children: React.ReactNode }) {
-  const [recipes, setRecipes] = useState<Recipe[]>(initialRecipes);
-  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [recipes, setRecipes, recipesHydrated] = usePersistedState<Recipe[]>(
+    'recipes',
+    initialRecipes,
+  );
+  const [savedIds, setSavedIds, savedHydrated] = usePersistedState<string[]>(
+    'saved-recipe-ids',
+    [],
+  );
 
   const getRecipeById = useCallback(
     (id: string) => recipes.find((recipe) => recipe.id === id),
@@ -88,6 +95,10 @@ export function RecipesProvider({ children }: { children: React.ReactNode }) {
     }),
     [recipes, savedIds, getRecipeById, saveRecipe, createRecipeFromUrl, isSaved, toggleSaved],
   );
+
+  if (!recipesHydrated || !savedHydrated) {
+    return null;
+  }
 
   return (
     <RecipesContext.Provider value={value}>{children}</RecipesContext.Provider>

@@ -487,8 +487,8 @@ function createStyles(theme: AppTheme) {
     },
     bookmarkButton: {
       alignItems: 'center',
-      backgroundColor: 'rgba(28, 24, 20, 0.28)',
-      borderColor: 'rgba(254, 252, 247, 0.24)',
+      backgroundColor: colors.imageScrim,
+      borderColor: colors.imageBorderLight,
       borderRadius: radius.pill,
       borderWidth: 1,
       height: 44,
@@ -515,8 +515,8 @@ function createStyles(theme: AppTheme) {
       gap: spacing[2],
     },
     feedChip: {
-      backgroundColor: 'rgba(254, 252, 247, 0.14)',
-      borderColor: 'rgba(254, 252, 247, 0.24)',
+      backgroundColor: colors.chipOnImage,
+      borderColor: colors.imageBorderLight,
       borderRadius: radius.pill,
       borderWidth: 1,
       paddingHorizontal: spacing[2],
