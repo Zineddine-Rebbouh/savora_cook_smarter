@@ -1,5 +1,11 @@
-import { createContext, useCallback, useContext, useMemo } from 'react';
-import { usePersistedState } from './usePersistedState';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createPantryItem as createPantryItemApi,
+  deletePantryItem as deletePantryItemApi,
+  getPantryItems as getPantryItemsApi,
+} from '../api/pantry';
+import { PantryItemRead } from '../api/types';
+import { useAuth } from './AuthContext';
 
 export type PantryItem = {
   alert: 'high' | 'medium' | 'low';
@@ -12,69 +18,115 @@ export type PantryItem = {
 
 type PantryState = {
   items: PantryItem[];
-  addIngredient: (name: string, quantity: string, category?: string) => void;
-  removeItem: (id: string) => void;
+  isLoading: boolean;
+  addIngredient: (name: string, quantity: string, category?: string) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
   hasIngredient: (name: string) => boolean;
+  refreshPantry: () => Promise<void>;
 };
 
-const seedItems: PantryItem[] = [
-  { id: 'pantry-1', name: 'Heavy cream', quantity: '250ml', expiry: 'Tomorrow', alert: 'high', category: 'Dairy' },
-  { id: 'pantry-2', name: 'Chicken breast', quantity: '2 pcs', expiry: '4 days', alert: 'medium', category: 'Meat' },
-  { id: 'pantry-3', name: 'Eggs', quantity: '6', expiry: '7 days', alert: 'low', category: 'Dairy' },
-  { id: 'pantry-4', name: 'Lemon', quantity: '3', expiry: '2 days', alert: 'medium', category: 'Produce' },
-  { id: 'pantry-5', name: 'Chickpeas', quantity: '400g', expiry: '30 days', alert: 'low', category: 'Pantry' },
-  { id: 'pantry-6', name: 'Butter', quantity: '100g', expiry: '5 days', alert: 'medium', category: 'Dairy' },
-];
+export function apiPantryItemToApp(item: PantryItemRead): PantryItem {
+  let expiryLabel = '—';
+  if (item.expiry_date) {
+    const diffDays = Math.ceil(
+      (new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)
+    );
+    if (diffDays <= 0) expiryLabel = 'Expired';
+    else if (diffDays === 1) expiryLabel = 'Tomorrow';
+    else if (diffDays <= 30) expiryLabel = `${diffDays} days`;
+    else expiryLabel = item.expiry_date;
+  }
+
+  const alertLevel = item.alert === 'high' || item.alert === 'medium' || item.alert === 'low'
+    ? item.alert
+    : 'low';
+
+  return {
+    id: item.id,
+    name: item.name,
+    quantity: item.quantity,
+    category: item.category || 'Pantry',
+    expiry: expiryLabel,
+    alert: alertLevel,
+  };
+}
 
 const PantryContext = createContext<PantryState | undefined>(undefined);
 
 export function PantryProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems, hydrated] = usePersistedState<PantryItem[]>(
-    'pantry-items',
-    seedItems,
-  );
+  const { isAuthenticated } = useAuth();
+  const [items, setItems] = useState<PantryItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const refreshPantry = useCallback(async () => {
+    if (!isAuthenticated) {
+      setItems([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await getPantryItemsApi();
+      const mapped = response.items.map(apiPantryItemToApp);
+      setItems(mapped);
+    } catch (err) {
+      console.warn('Failed to fetch pantry items from API:', err);
+      setItems([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    refreshPantry();
+  }, [refreshPantry]);
 
   const addIngredient = useCallback(
-    (name: string, quantity: string, category = 'Pantry') => {
-      setItems((current) => {
-        if (current.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
-          return current;
-        }
-
-        return [
-          {
-            id: `pantry-${Date.now()}`,
-            name,
-            quantity,
-            expiry: '—',
-            alert: 'low' as const,
-            category,
-          },
-          ...current,
-        ];
-      });
+    async (name: string, quantity: string, category = 'Pantry') => {
+      try {
+        const created = await createPantryItemApi({
+          name,
+          quantity,
+          category,
+        });
+        const appItem = apiPantryItemToApp(created);
+        setItems((current) => [appItem, ...current.filter((i) => i.id !== appItem.id)]);
+      } catch (err) {
+        console.warn('Failed to add pantry item to API, fallback to local state:', err);
+        const tempItem: PantryItem = {
+          id: `pantry-${Date.now()}`,
+          name,
+          quantity,
+          category,
+          expiry: '—',
+          alert: 'low',
+        };
+        setItems((current) => [tempItem, ...current]);
+      }
     },
-    [],
+    []
   );
 
-  const removeItem = useCallback((id: string) => {
+  const removeItem = useCallback(async (id: string) => {
+    try {
+      await deletePantryItemApi(id);
+    } catch (err) {
+      console.warn('Failed to delete pantry item from API:', err);
+    }
     setItems((current) => current.filter((item) => item.id !== id));
   }, []);
 
   const hasIngredient = useCallback(
     (name: string) =>
       items.some((item) => item.name.toLowerCase() === name.toLowerCase()),
-    [items],
+    [items]
   );
 
   const value = useMemo(
-    () => ({ items, addIngredient, removeItem, hasIngredient }),
-    [items, addIngredient, removeItem, hasIngredient],
+    () => ({ items, isLoading, addIngredient, removeItem, hasIngredient, refreshPantry }),
+    [items, isLoading, addIngredient, removeItem, hasIngredient, refreshPantry]
   );
-
-  if (!hydrated) {
-    return null;
-  }
 
   return <PantryContext.Provider value={value}>{children}</PantryContext.Provider>;
 }

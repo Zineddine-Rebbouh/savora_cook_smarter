@@ -36,14 +36,14 @@ export function PantryScreen({ theme }: PantryScreenProps) {
       ? items
       : items.filter((item) => item.category === selectedCategory);
 
-  function submitItem() {
+  async function submitItem() {
     const name = newName.trim();
 
     if (!name) {
       return;
     }
 
-    addIngredient(name, newQuantity.trim() || '1x', newCategory);
+    await addIngredient(name, newQuantity.trim() || '1x', newCategory);
     setNewName('');
     setNewQuantity('');
     setNewCategory('Produce');

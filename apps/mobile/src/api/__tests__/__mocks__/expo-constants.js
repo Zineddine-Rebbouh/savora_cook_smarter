@@ -1,0 +1,9 @@
+module.exports = {
+  default: {
+    expoConfig: {
+      extra: {
+        EXPO_PUBLIC_API_URL: 'http://localhost:8000/api/v1',
+      },
+    },
+  },
+};

@@ -10,7 +10,8 @@ import {
 } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useRef } from "react";
-import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Animated, Pressable, StyleSheet, View } from "react-native";
+import { useAuth } from "../state/AuthContext";
 
 import { HomeScreen } from "../screens/HomeScreen";
 import { ImportHubScreen } from "../screens/ImportHubScreen";
@@ -54,6 +55,8 @@ type AppNavigatorProps = {
 };
 
 export function AppNavigator({ theme }: AppNavigatorProps) {
+  const { isAuthenticated, isLoading } = useAuth();
+
   const navigationTheme: NavigationTheme = {
     ...DefaultTheme,
     colors: {
@@ -66,10 +69,25 @@ export function AppNavigator({ theme }: AppNavigatorProps) {
     },
   };
 
+  if (isLoading) {
+    return (
+      <View
+        style={{
+          alignItems: "center",
+          backgroundColor: theme.colors.bgPrimary,
+          flex: 1,
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator color={theme.colors.accentPrimary} size="large" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer theme={navigationTheme}>
       <RootStack.Navigator
-        initialRouteName="Onboarding"
+        initialRouteName={isAuthenticated ? "MainTabs" : "Onboarding"}
         screenOptions={{ headerShown: false }}
       >
         <RootStack.Screen name="Onboarding">

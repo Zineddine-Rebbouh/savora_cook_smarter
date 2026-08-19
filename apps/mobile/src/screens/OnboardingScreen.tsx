@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { AppTheme } from "../theme";
+import { useAuth } from "../state/AuthContext";
 
 type OnboardingScreenProps = {
   onFinish: () => void;
@@ -63,6 +64,10 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
   const { width } = useWindowDimensions();
   const scrollRef = useRef<FlatList<any>>(null);
 
+  const { registerUser, error: authError, clearError } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
   function toggleDiet(label: string) {
     setSelectedDiets((current) =>
       current.includes(label)
@@ -82,6 +87,30 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
     scrollRef.current?.scrollToIndex({ index: nextIndex, animated: true });
   }
 
+  async function handleCreateAccount() {
+    if (!email || !password) {
+      setLocalError("Please enter both an email and password.");
+      return;
+    }
+    if (password.length < 8) {
+      setLocalError("Password must be at least 8 characters long.");
+      return;
+    }
+    setLocalError(null);
+    clearError();
+    setSubmitting(true);
+    try {
+      await registerUser(email.trim(), password, selectedDiets);
+      onFinish();
+    } catch (err: any) {
+      // Error handled by AuthContext or caught here
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const displayError = localError || authError;
+
   if (stage === "account") {
     return (
       <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
@@ -92,11 +121,22 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
               Tell us how you eat. Set these now, skip forever.
             </Text>
 
+            {displayError ? (
+              <View style={styles.errorContainer}>
+                <Feather color="#D94F3D" name="alert-circle" size={16} />
+                <Text style={styles.errorText}>{displayError}</Text>
+              </View>
+            ) : null}
+
             <TextInput
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
-              onChangeText={setEmail}
+              onChangeText={(val) => {
+                setEmail(val);
+                if (localError) setLocalError(null);
+                if (authError) clearError();
+              }}
               placeholder="Email"
               placeholderTextColor={theme.colors.textTertiary}
               style={styles.input}
@@ -105,8 +145,12 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
             <TextInput
               autoCapitalize="none"
               autoComplete="password"
-              onChangeText={setPassword}
-              placeholder="Password"
+              onChangeText={(val) => {
+                setPassword(val);
+                if (localError) setLocalError(null);
+                if (authError) clearError();
+              }}
+              placeholder="Password (min 8 chars)"
               placeholderTextColor={theme.colors.textTertiary}
               secureTextEntry
               style={styles.input}
@@ -139,14 +183,17 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
           </View>
 
           <Pressable
-            onPress={onFinish}
+            disabled={submitting}
+            onPress={handleCreateAccount}
             style={({ pressed }) => [
               styles.accountCtaButton,
               styles.ctaSpacing,
-              pressed && styles.pressed,
+              (pressed || submitting) && styles.pressed,
             ]}
           >
-            <Text style={styles.ctaText}>Create My Cookbook</Text>
+            <Text style={styles.ctaText}>
+              {submitting ? "Creating..." : "Create My Cookbook"}
+            </Text>
           </Pressable>
           <Pressable onPress={onFinish} style={styles.skipButton}>
             <Text style={styles.skipText}>Skip for now</Text>
@@ -286,7 +333,26 @@ function createStyles(theme: AppTheme) {
       fontSize: 15,
       lineHeight: 22,
       marginTop: spacing[2],
-      marginBottom: spacing[6],
+      marginBottom: spacing[4],
+    },
+    errorContainer: {
+      alignItems: "center",
+      backgroundColor: "#FDF2F0",
+      borderColor: colors.danger,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: spacing[2],
+      marginBottom: spacing[3],
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[3],
+    },
+    errorText: {
+      color: colors.danger,
+      flex: 1,
+      fontFamily: fonts.bodyMedium,
+      fontSize: 13,
+      lineHeight: 18,
     },
     input: {
       backgroundColor: colors.surfaceCard,

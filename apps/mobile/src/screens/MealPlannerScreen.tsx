@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -11,6 +12,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  addMealPlanEntry,
+  createMealPlan,
+  getMealPlans,
+  removeMealPlanEntry,
+} from '../api/mealPlans';
+import { MealPlanEntryRead } from '../api/types';
 import { useRecipes } from '../state/RecipesContext';
 import type { AppTheme } from '../theme';
 
@@ -20,7 +28,6 @@ type MealPlannerScreenProps = {
 };
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
 const mealSlots = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 const groceryItems = [
@@ -29,15 +36,84 @@ const groceryItems = [
   { item: 'Fresh herbs', note: 'Thursday Dinner' },
 ];
 
+function getCurrentWeekMonday(): string {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  return monday.toISOString().split('T')[0];
+}
+
+type SlotEntry = {
+  entryId: string;
+  recipeId: string;
+  recipeTitle?: string;
+};
+
 export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
   const styles = createStyles(theme);
   const { recipes } = useRecipes();
-  const [plan, setPlan] = useState<Record<string, string>>({});
+  const [mealPlanId, setMealPlanId] = useState<string | null>(null);
+  const [planMap, setPlanMap] = useState<Record<string, SlotEntry>>({});
+  const [loading, setLoading] = useState<boolean>(true);
   const [pickingSlot, setPickingSlot] = useState<string | null>(null);
 
-  function toggleSlot(key: string) {
-    if (plan[key]) {
-      setPlan((current) => {
+  const fetchOrCreatePlan = useCallback(async () => {
+    setLoading(true);
+    const currentWeekStart = getCurrentWeekMonday();
+
+    try {
+      const plans = await getMealPlans();
+      let activePlan = plans.find((p) => p.week_start === currentWeekStart);
+
+      if (!activePlan) {
+        if (plans.length > 0) {
+          activePlan = plans[0];
+        } else {
+          activePlan = await createMealPlan({ week_start: currentWeekStart, entries: [] });
+        }
+      }
+
+      setMealPlanId(activePlan.id);
+
+      const map: Record<string, SlotEntry> = {};
+      activePlan.entries.forEach((e: MealPlanEntryRead) => {
+        const dayLabel = weekdays[e.day] || 'Mon';
+        const normalizedSlot =
+          mealSlots.find((s) => s.toLowerCase() === e.slot.toLowerCase()) || e.slot;
+        const key = `${dayLabel}-${normalizedSlot}`;
+        map[key] = {
+          entryId: e.id,
+          recipeId: e.recipe_id,
+          recipeTitle: e.recipe_title,
+        };
+      });
+
+      setPlanMap(map);
+    } catch (err) {
+      console.warn('Failed to fetch/create meal plan:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrCreatePlan();
+  }, [fetchOrCreatePlan]);
+
+  async function toggleSlot(key: string) {
+    const existing = planMap[key];
+
+    if (existing) {
+      // Slot contains an entry -> Remove it
+      if (mealPlanId) {
+        try {
+          await removeMealPlanEntry(mealPlanId, existing.entryId);
+        } catch (err) {
+          console.warn('Failed to remove meal plan entry from API:', err);
+        }
+      }
+      setPlanMap((current) => {
         const next = { ...current };
         delete next[key];
         return next;
@@ -48,11 +124,47 @@ export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
     setPickingSlot(key);
   }
 
-  function assignRecipe(recipeId: string) {
-    if (pickingSlot) {
-      setPlan((current) => ({ ...current, [pickingSlot]: recipeId }));
-    }
+  async function assignRecipe(recipeId: string) {
+    if (!pickingSlot) return;
+
+    const [dayLabel, slotLabel] = pickingSlot.split('-');
+    const dayIndex = weekdays.indexOf(dayLabel);
+    const selectedSlot = pickingSlot;
     setPickingSlot(null);
+
+    const recipe = recipes.find((r) => r.id === recipeId);
+
+    if (mealPlanId && dayIndex >= 0) {
+      try {
+        const createdEntry = await addMealPlanEntry(mealPlanId, {
+          recipe_id: recipeId,
+          day: dayIndex,
+          slot: slotLabel,
+        });
+
+        setPlanMap((current) => ({
+          ...current,
+          [selectedSlot]: {
+            entryId: createdEntry.id,
+            recipeId: createdEntry.recipe_id,
+            recipeTitle: createdEntry.recipe_title,
+          },
+        }));
+        return;
+      } catch (err) {
+        console.warn('Failed to assign meal plan entry to API, fallback local:', err);
+      }
+    }
+
+    // Local state fallback if offline or no mealPlanId
+    setPlanMap((current) => ({
+      ...current,
+      [selectedSlot]: {
+        entryId: `local-${Date.now()}`,
+        recipeId,
+        recipeTitle: recipe?.title,
+      },
+    }));
   }
 
   function shareGrocery() {
@@ -72,84 +184,92 @@ export function MealPlannerScreen({ onClose, theme }: MealPlannerScreenProps) {
         <Text style={styles.headerTitle}>Meal Planner</Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.pagePadding}>
-          <View style={styles.weekRow}>
-            {weekdays.map((day, index) => (
-              <View key={day} style={styles.weekdayCell}>
-                <Text style={styles.weekdayLabel}>{day}</Text>
-                <Text style={styles.weekdayDate}>{index + 19}</Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.slotsGrid}>
-            {weekdays.map((day) => (
-              <View key={day} style={styles.dayColumn}>
-                <Text style={styles.dayHeading}>{day}</Text>
-                {mealSlots.map((slot) => {
-                  const key = `${day}-${slot}`;
-                  const recipe = plan[key]
-                    ? recipes.find((item) => item.id === plan[key])
-                    : undefined;
-
-                  return (
-                    <Pressable
-                      key={slot}
-                      onPress={() => toggleSlot(key)}
-                      style={[
-                        styles.slotCard,
-                        recipe && styles.slotCardFilled,
-                      ]}
-                    >
-                      <Text style={styles.slotLabel}>{slot}</Text>
-                      <Text
-                        numberOfLines={2}
-                        style={recipe ? styles.slotRecipe : styles.slotPlaceholder}
-                      >
-                        {recipe ? recipe.title : 'Tap to assign'}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Week's shopping</Text>
-              <Text style={styles.summaryValue}>12 items needed</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Est. cost</Text>
-              <Text style={styles.summaryValue}>~2,400 DZD</Text>
-            </View>
-            <Text style={styles.summaryMeta}>Avg 2,100 cal/day · 145g protein</Text>
-          </View>
-
-          <View style={styles.groceryCard}>
-            <View style={styles.groceryHeader}>
-              <Text style={styles.sectionTitle}>Grocery List</Text>
-              <Pressable onPress={shareGrocery} style={styles.groceryAction}>
-                <Text style={styles.groceryActionText}>Share</Text>
-              </Pressable>
-            </View>
-            {groceryItems.map((entry) => (
-              <View key={entry.item} style={styles.groceryRow}>
-                <View style={styles.checkbox} />
-                <View style={styles.groceryCopy}>
-                  <Text style={styles.groceryText}>{entry.item}</Text>
-                  <Text style={styles.groceryNote}>Used in: {entry.note}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color={theme.colors.accentPrimary} size="large" />
         </View>
-      </ScrollView>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.pagePadding}>
+            <View style={styles.weekRow}>
+              {weekdays.map((day, index) => (
+                <View key={day} style={styles.weekdayCell}>
+                  <Text style={styles.weekdayLabel}>{day}</Text>
+                  <Text style={styles.weekdayDate}>{index + 19}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.slotsGrid}>
+              {weekdays.map((day) => (
+                <View key={day} style={styles.dayColumn}>
+                  <Text style={styles.dayHeading}>{day}</Text>
+                  {mealSlots.map((slot) => {
+                    const key = `${day}-${slot}`;
+                    const slotData = planMap[key];
+                    const recipe = slotData
+                      ? recipes.find((item) => item.id === slotData.recipeId)
+                      : undefined;
+                    const displayTitle = recipe?.title || slotData?.recipeTitle;
+
+                    return (
+                      <Pressable
+                        key={slot}
+                        onPress={() => toggleSlot(key)}
+                        style={[
+                          styles.slotCard,
+                          Boolean(slotData) && styles.slotCardFilled,
+                        ]}
+                      >
+                        <Text style={styles.slotLabel}>{slot}</Text>
+                        <Text
+                          numberOfLines={2}
+                          style={slotData ? styles.slotRecipe : styles.slotPlaceholder}
+                        >
+                          {displayTitle || (slotData ? 'Assigned Recipe' : 'Tap to assign')}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Week's shopping</Text>
+                <Text style={styles.summaryValue}>12 items needed</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Est. cost</Text>
+                <Text style={styles.summaryValue}>~2,400 DZD</Text>
+              </View>
+              <Text style={styles.summaryMeta}>Avg 2,100 cal/day · 145g protein</Text>
+            </View>
+
+            <View style={styles.groceryCard}>
+              <View style={styles.groceryHeader}>
+                <Text style={styles.sectionTitle}>Grocery List</Text>
+                <Pressable onPress={shareGrocery} style={styles.groceryAction}>
+                  <Text style={styles.groceryActionText}>Share</Text>
+                </Pressable>
+              </View>
+              {groceryItems.map((entry) => (
+                <View key={entry.item} style={styles.groceryRow}>
+                  <View style={styles.checkbox} />
+                  <View style={styles.groceryCopy}>
+                    <Text style={styles.groceryText}>{entry.item}</Text>
+                    <Text style={styles.groceryNote}>Used in: {entry.note}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      )}
 
       <Modal
         animationType="slide"
@@ -197,6 +317,12 @@ function createStyles(theme: AppTheme) {
     safeArea: {
       backgroundColor: colors.bgPrimary,
       flex: 1,
+    },
+    loadingContainer: {
+      alignItems: 'center',
+      backgroundColor: colors.bgPrimary,
+      flex: 1,
+      justifyContent: 'center',
     },
     headerRow: {
       alignItems: 'center',
