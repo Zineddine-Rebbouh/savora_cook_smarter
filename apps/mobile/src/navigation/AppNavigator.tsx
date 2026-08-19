@@ -10,7 +10,7 @@ import {
 } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 
 import { HomeScreen } from "../screens/HomeScreen";
 import { ImportHubScreen } from "../screens/ImportHubScreen";
@@ -374,7 +374,6 @@ function AddTabButton({
       <View style={styles.addButton}>
         <Feather color={theme.colors.textInverse} name="plus" size={22} />
       </View>
-      <Text style={styles.addLabel}>Add</Text>
     </AnimatedPressable>
   );
 }
@@ -413,12 +412,6 @@ function createStyles(theme: AppTheme) {
       justifyContent: "center",
       width: 48,
       ...shadows.elevated,
-    },
-    addLabel: {
-      color: colors.textSecondary,
-      fontFamily: theme.fonts.bodyMedium,
-      fontSize: 11,
-      marginTop: 4,
     },
   });
 }

@@ -4,6 +4,8 @@ Cook smarter. Waste less. Eat better.
 
 Savora is a mobile-first cooking product built around the idea that the app should be useful in the kitchen, not just pleasant on a laptop. The core experience lives on the phone: import recipes, match them to pantry inventory, cook hands-free, and stay in flow while your screen stays awake and your hands stay busy.
 
+![Home UI](apps/mobile/assets/home_ui.png)
+
 ## Product Position
 
 Savora is not a recipe website in app form. Its differentiated features are mobile-native:
