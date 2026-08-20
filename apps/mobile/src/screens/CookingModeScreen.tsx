@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useVoiceCommands } from '../native/useVoiceCommands';
-import { demoRecipe } from '../data/mockRecipe';
 import { useRecipes } from '../state/RecipesContext';
 import type { AppTheme } from '../theme';
 
@@ -56,25 +55,69 @@ export function CookingModeScreen({ onExit, recipeId, theme }: CookingModeScreen
   useKeepAwake();
   const { isSupported, isListening, partial, results, start, stop } = useVoiceCommands();
   const { getRecipeById } = useRecipes();
-  const recipe = getRecipeById(recipeId) ?? demoRecipe;
-  const steps: Step[] = recipe.steps.length
+  const recipe = getRecipeById(recipeId);
+  const styles = createStyles(theme);
+
+  const steps: Step[] = recipe?.steps.length
     ? recipe.steps.map((step) => ({
         title: step.instruction,
         note: step.linkedRecipe ? `${step.linkedRecipe} ->` : null,
         timer: step.timerMinutes ?? null,
       }))
     : [{ title: 'No steps for this recipe yet', note: null, timer: null }];
-  const quickGlance = recipe.ingredients.map(
-    (ingredient) =>
-      `${formatAmount(ingredient.amount)}${
-        ingredient.unit ? ` ${ingredient.unit}` : ''
-      } ${ingredient.name}`.trim(),
-  );
+
+  const quickGlance = (recipe?.ingredients ?? []).map((ingredient) => {
+    const amountStr = `${formatAmount(ingredient.amount)}${
+      ingredient.unit ? ` ${ingredient.unit}` : ''
+    }`;
+    return {
+      amountStr,
+      name: ingredient.name,
+      fullText: `${amountStr} ${ingredient.name}`.trim(),
+    };
+  });
+
   const [currentStep, setCurrentStep] = useState(1);
   const [timer, setTimer] = useState<{ minutes: number; remaining: number } | null>(null);
   const [voiceMessage, setVoiceMessage] = useState<string | null>(null);
-  const styles = createStyles(theme);
   const step = steps[currentStep - 1];
+
+  if (!recipe) {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <View style={styles.wrapper}>
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.modeLabel}>Savora cooking mode</Text>
+              <Text style={styles.recipeName}>Recipe Not Found</Text>
+            </View>
+            <View style={styles.exitPill}>
+              <Pressable onPress={onExit} style={styles.exitButton}>
+                <Text style={styles.exitText}>✕ Exit</Text>
+              </Pressable>
+            </View>
+          </View>
+          <View style={styles.stepCard}>
+            <Text style={styles.stepCopy}>Recipe Not Found</Text>
+            <Text style={styles.stepNote}>
+              The requested recipe could not be loaded or was removed.
+            </Text>
+            <Pressable
+              onPress={onExit}
+              style={({ pressed }) => [
+                styles.timerChip,
+                pressed && styles.timerChipPressed,
+                { marginTop: 24 },
+              ]}
+            >
+              <Feather color={theme.colors.bgDark} name="arrow-left" size={14} />
+              <Text style={styles.timerChipText}>Go Back</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   useEffect(() => {
     setTimer(null);
@@ -97,9 +140,9 @@ export function CookingModeScreen({ onExit, recipeId, theme }: CookingModeScreen
       setVoiceMessage('Previous step');
     } else if (command?.kind === 'howMuch') {
       const found = quickGlance.find((item) =>
-        item.toLowerCase().includes(command.ingredient),
+        item.fullText.toLowerCase().includes(command.ingredient),
       );
-      setVoiceMessage(found ?? `No ingredient "${command.ingredient}" in this recipe`);
+      setVoiceMessage(found ? found.fullText : `No ingredient "${command.ingredient}" in this recipe`);
     } else {
       setVoiceMessage(`Heard: "${final}"`);
     }
@@ -241,10 +284,10 @@ export function CookingModeScreen({ onExit, recipeId, theme }: CookingModeScreen
 
         <View style={styles.quickGlanceCard}>
           <Text style={styles.quickGlanceTitle}>Ingredients quick glance</Text>
-          {quickGlance.map((item) => (
-            <View key={item} style={styles.quickItemRow}>
-              <Text style={styles.quickItemAmount}>1x</Text>
-              <Text style={styles.quickItemText}>{item}</Text>
+          {quickGlance.map((item, index) => (
+            <View key={`${item.fullText}-${index}`} style={styles.quickItemRow}>
+              <Text style={styles.quickItemAmount}>{item.amountStr}</Text>
+              <Text style={styles.quickItemText}>{item.name}</Text>
             </View>
           ))}
         </View>

@@ -9,10 +9,22 @@ import { TokenOut } from './types';
 // on a physical device or emulator resolves to the device itself.
 const DEFAULT_API_URL = 'http://localhost:8000/api/v1';
 
+// In development Expo advertises the Metro host (the dev machine) via hostUri,
+// e.g. "192.168.1.3:8081". Devices/emulators must reach the backend through
+// that LAN IP, never "localhost" (which resolves to the device itself).
 const getBaseUrl = (): string => {
   const extraApiUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL;
   const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
-  return extraApiUrl || envApiUrl || DEFAULT_API_URL;
+  if (extraApiUrl || envApiUrl) {
+    return extraApiUrl || envApiUrl;
+  }
+
+  const host = Constants.expoConfig?.hostUri?.split(':')[0];
+  if (host && host !== 'localhost') {
+    return `http://${host}:8000/api/v1`;
+  }
+
+  return DEFAULT_API_URL;
 };
 
 export const apiClient = axios.create({
