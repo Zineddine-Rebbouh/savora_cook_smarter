@@ -91,7 +91,7 @@ class RecipeCreate(BaseModel):
     hero_image: str | None = None
     description: str | None = None
     hero_tag: str | None = None
-    servings: int = 1
+    servings: int = Field(1, ge=1)
     prep_minutes: int = 0
     cook_minutes: int = 0
     difficulty: str = "Easy"
@@ -106,7 +106,7 @@ class RecipeUpdate(BaseModel):
     hero_image: str | None = None
     description: str | None = None
     hero_tag: str | None = None
-    servings: int | None = None
+    servings: int | None = Field(None, ge=1)
     prep_minutes: int | None = None
     cook_minutes: int | None = None
     difficulty: str | None = None

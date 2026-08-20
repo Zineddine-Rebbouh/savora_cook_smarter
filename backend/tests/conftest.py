@@ -7,8 +7,11 @@ from sqlalchemy.pool import StaticPool
 
 from app.auth import issue_token_pair
 from app.database import Base, get_db
+from app.limiter import limiter
 from app.main import app
 from app.models import Profile, User
+
+limiter.enabled = False
 
 # SQLite in-memory engine for fast test runs
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

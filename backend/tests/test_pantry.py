@@ -1,4 +1,6 @@
 from datetime import date, timedelta
+from fastapi.testclient import TestClient
+from app.main import app
 
 
 def test_pantry_crud_and_alerts(auth_client_a):
@@ -52,3 +54,36 @@ def test_pantry_crud_and_alerts(auth_client_a):
     # Delete item
     res_del = auth_client_a.delete(f"/api/v1/pantry-items/{item_id}")
     assert res_del.status_code == 204
+
+
+def test_create_pantry_item_invalid_expiry(auth_client_a):
+    item = {
+        "name": "Cheese",
+        "quantity": "200g",
+        "category": "Dairy",
+        "expiry_date": "not-a-valid-date",
+    }
+    res = auth_client_a.post("/api/v1/pantry-items/", json=item)
+    assert res.status_code == 422
+
+
+def test_empty_state_pantry(client):
+    # Register clean user with no pantry items
+    reg_res = client.post(
+        "/api/v1/auth/register/",
+        json={
+            "email": "clean_pantry@example.com",
+            "password": "password123",
+            "display_name": "Clean Pantry User",
+        },
+    )
+    assert reg_res.status_code == 201
+    token = reg_res.json()["access_token"]
+
+    with TestClient(app, headers={"Authorization": f"Bearer {token}"}) as clean_client:
+        res = clean_client.get("/api/v1/pantry-items/")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["items"] == []
+        assert data["total"] == 0
+

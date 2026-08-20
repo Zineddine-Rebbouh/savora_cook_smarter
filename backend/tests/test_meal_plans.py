@@ -1,4 +1,6 @@
 from datetime import date
+from fastapi.testclient import TestClient
+from app.main import app
 
 
 def test_meal_plan_crud_and_entries(auth_client_a):
@@ -35,3 +37,23 @@ def test_meal_plan_crud_and_entries(auth_client_a):
     res_list = auth_client_a.get("/api/v1/meal-plans/")
     assert res_list.status_code == 200
     assert len(res_list.json()) == 1
+
+
+def test_empty_state_meal_plans(client):
+    # Register clean user with no meal plans
+    reg_res = client.post(
+        "/api/v1/auth/register/",
+        json={
+            "email": "clean_mealplans@example.com",
+            "password": "password123",
+            "display_name": "Clean Meal Plan User",
+        },
+    )
+    assert reg_res.status_code == 201
+    token = reg_res.json()["access_token"]
+
+    with TestClient(app, headers={"Authorization": f"Bearer {token}"}) as clean_client:
+        res = clean_client.get("/api/v1/meal-plans/")
+        assert res.status_code == 200
+        assert res.json() == []
+
