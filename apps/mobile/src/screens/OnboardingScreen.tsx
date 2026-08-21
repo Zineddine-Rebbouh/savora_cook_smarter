@@ -2,20 +2,22 @@ import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRef, useState } from "react";
 import {
+  Animated,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { AppTheme } from "../theme";
-import { useAuth } from "../state/AuthContext";
 
 type OnboardingScreenProps = {
+  /** Called when the user finishes the carousel — navigates to CreateAccount. */
   onFinish: () => void;
   theme: AppTheme;
 };
@@ -26,59 +28,46 @@ const slides = [
     title: "Hands-free gesture cooking",
     subtitle:
       "Your kitchen should adapt to your hands, not the other way around.",
-    icon: "repeat",
+    icon: "repeat" as const,
   },
   {
     key: "slide-2",
     title: "Import any recipe instantly",
     subtitle:
       "Paste a URL and Savora structures the ingredients, steps, and timing.",
-    icon: "link",
+    icon: "link" as const,
   },
   {
     key: "slide-3",
     title: "Cook with confidence",
     subtitle:
       "Wake-lock cooking mode keeps the screen ready when your hands are full.",
-    icon: "clock",
+    icon: "clock" as const,
   },
 ];
 
-const dietaryPreferences = [
-  "Vegetarian",
-  "Vegan",
-  "Gluten-Free",
-  "Dairy-Free",
-  "Halal",
-  "Keto",
-  "None",
-];
-
+/*
+ * Transition approach: Horizontal swipe via FlatList + pagingEnabled.
+ *
+ * Why FlatList instead of a custom gesture handler?
+ * FlatList's pagingEnabled already delivers native-quality momentum-based
+ * snapping on both iOS and Android with no extra dependencies. Adding
+ * react-native-gesture-handler PanResponder would be unnecessary complexity
+ * for the same UX. The animated dots use an Animated.Value driven by
+ * onScroll's contentOffset for a smooth, frame-synced width interpolation.
+ */
 export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
   const styles = createStyles(theme);
-  const [stage, setStage] = useState<"carousel" | "account">("carousel");
   const [index, setIndex] = useState(0);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [selectedDiets, setSelectedDiets] = useState<string[]>([]);
   const { width } = useWindowDimensions();
-  const scrollRef = useRef<FlatList<any>>(null);
+  const scrollRef = useRef<FlatList<(typeof slides)[number]>>(null);
 
-  const { registerUser, error: authError, clearError } = useAuth();
-  const [submitting, setSubmitting] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
-
-  function toggleDiet(label: string) {
-    setSelectedDiets((current) =>
-      current.includes(label)
-        ? current.filter((item) => item !== label)
-        : [...current, label],
-    );
-  }
+  // Driven by onScroll — used for smooth animated dot interpolation
+  const scrollX = useRef(new Animated.Value(0)).current;
 
   function advanceSlide() {
     if (index === slides.length - 1) {
-      setStage("account");
+      onFinish();
       return;
     }
 
@@ -87,129 +76,21 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
     scrollRef.current?.scrollToIndex({ index: nextIndex, animated: true });
   }
 
-  async function handleCreateAccount() {
-    if (!email || !password) {
-      setLocalError("Please enter both an email and password.");
-      return;
-    }
-    if (password.length < 8) {
-      setLocalError("Password must be at least 8 characters long.");
-      return;
-    }
-    setLocalError(null);
-    clearError();
-    setSubmitting(true);
-    try {
-      await registerUser(email.trim(), password, selectedDiets);
-      onFinish();
-    } catch (err: any) {
-      // Error handled by AuthContext or caught here
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  const displayError = localError || authError;
-
-  if (stage === "account") {
-    return (
-      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
-        <View style={styles.pagePadding}>
-          <View style={styles.accountContent}>
-            <Text style={styles.accountTitle}>Set up your cookbook</Text>
-            <Text style={styles.accountSubtitle}>
-              Tell us how you eat. Set these now, skip forever.
-            </Text>
-
-            {displayError ? (
-              <View style={styles.errorContainer}>
-                <Feather color="#D94F3D" name="alert-circle" size={16} />
-                <Text style={styles.errorText}>{displayError}</Text>
-              </View>
-            ) : null}
-
-            <TextInput
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              onChangeText={(val) => {
-                setEmail(val);
-                if (localError) setLocalError(null);
-                if (authError) clearError();
-              }}
-              placeholder="Email"
-              placeholderTextColor={theme.colors.textTertiary}
-              style={styles.input}
-              value={email}
-            />
-            <TextInput
-              autoCapitalize="none"
-              autoComplete="password"
-              onChangeText={(val) => {
-                setPassword(val);
-                if (localError) setLocalError(null);
-                if (authError) clearError();
-              }}
-              placeholder="Password (min 8 chars)"
-              placeholderTextColor={theme.colors.textTertiary}
-              secureTextEntry
-              style={styles.input}
-              value={password}
-            />
-
-            <Text style={styles.dietLabel}>Dietary preferences</Text>
-            <View style={styles.dietRow}>
-              {dietaryPreferences.map((label) => {
-                const active = selectedDiets.includes(label);
-
-                return (
-                  <Pressable
-                    key={label}
-                    onPress={() => toggleDiet(label)}
-                    style={[styles.dietChip, active && styles.dietChipActive]}
-                  >
-                    <Text
-                      style={[
-                        styles.dietChipText,
-                        active && styles.dietChipTextActive,
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-
-          <Pressable
-            disabled={submitting}
-            onPress={handleCreateAccount}
-            style={({ pressed }) => [
-              styles.accountCtaButton,
-              styles.ctaSpacing,
-              (pressed || submitting) && styles.pressed,
-            ]}
-          >
-            <Text style={styles.ctaText}>
-              {submitting ? "Creating..." : "Create My Cookbook"}
-            </Text>
-          </Pressable>
-          <Pressable onPress={onFinish} style={styles.skipButton}>
-            <Text style={styles.skipText}>Skip for now</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+  function handleMomentumEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const newIndex = Math.round(
+      event.nativeEvent.contentOffset.x / width,
     );
+    setIndex(newIndex);
   }
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+      {/* ── Hero brand area ── */}
       <LinearGradient
         colors={[theme.colors.bgDark, theme.colors.bgDarkSecondary]}
         style={styles.heroShell}
       >
-        <Pressable onPress={() => setStage("account")} style={styles.skipLink}>
+        <Pressable onPress={onFinish} style={styles.skipLink}>
           <Text style={styles.skipLinkText}>Skip</Text>
         </Pressable>
         <View style={styles.heroContent}>
@@ -229,20 +110,21 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
         <View style={styles.heroAccent} />
       </LinearGradient>
 
+      {/* ── Feature slides ── */}
       <View style={styles.carouselShell}>
-        <FlatList
+        <Animated.FlatList
           data={slides}
           horizontal
           pagingEnabled
-          ref={scrollRef}
+          ref={scrollRef as React.RefObject<FlatList<(typeof slides)[number]>>}
           showsHorizontalScrollIndicator={false}
           keyExtractor={(item) => item.key}
-          onMomentumScrollEnd={(event) => {
-            const newIndex = Math.round(
-              event.nativeEvent.contentOffset.x / width,
-            );
-            setIndex(newIndex);
-          }}
+          onMomentumScrollEnd={handleMomentumEnd}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: false },
+          )}
+          scrollEventThrottle={16}
           renderItem={({ item, index: slideIndex }) => (
             <View style={[styles.slide, { width }]}>
               <View style={styles.slideEyebrow}>
@@ -274,21 +156,70 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
         />
       </View>
 
+      {/* ── Footer with animated dots + CTA ── */}
       <View style={styles.footer}>
         <View style={styles.progressRow}>
           <View style={styles.dotsRow}>
-            {slides.map((_, slideIndex) => (
-              <View
-                key={slideIndex}
-                style={[styles.dot, slideIndex === index && styles.dotActive]}
-              />
-            ))}
+            {slides.map((_, slideIndex) => {
+              // Smoothly interpolate each dot's width based on scroll position
+              const dotWidth = scrollX.interpolate({
+                inputRange: [
+                  (slideIndex - 1) * width,
+                  slideIndex * width,
+                  (slideIndex + 1) * width,
+                ],
+                outputRange: [10, 24, 10],
+                extrapolate: "clamp",
+              });
+              const dotOpacity = scrollX.interpolate({
+                inputRange: [
+                  (slideIndex - 1) * width,
+                  slideIndex * width,
+                  (slideIndex + 1) * width,
+                ],
+                outputRange: [0.4, 1, 0.4],
+                extrapolate: "clamp",
+              });
+              const dotColor = scrollX.interpolate({
+                inputRange: [
+                  (slideIndex - 1) * width,
+                  slideIndex * width,
+                  (slideIndex + 1) * width,
+                ],
+                outputRange: [
+                  theme.colors.bgTertiary,
+                  theme.colors.accentPrimary,
+                  theme.colors.bgTertiary,
+                ],
+                extrapolate: "clamp",
+              });
+
+              return (
+                <Animated.View
+                  key={slideIndex}
+                  style={[
+                    styles.dot,
+                    {
+                      width: dotWidth,
+                      opacity: dotOpacity,
+                      backgroundColor: dotColor,
+                    },
+                  ]}
+                />
+              );
+            })}
           </View>
           <Text style={styles.progressText}>
-            {String(index + 1).padStart(2, "0")} / 03
+            {String(index + 1).padStart(2, "0")} / 0{slides.length}
           </Text>
         </View>
-        <Pressable onPress={advanceSlide} style={styles.ctaButton}>
+        <Pressable
+          onPress={advanceSlide}
+          style={({ pressed }) => [
+            styles.ctaButton,
+            pressed && styles.pressed,
+          ]}
+        >
           <Text style={styles.ctaText}>
             {index === slides.length - 1 ? "Get Started" : "Next"}
           </Text>
@@ -303,6 +234,7 @@ export function OnboardingScreen({ onFinish, theme }: OnboardingScreenProps) {
   );
 }
 
+// ── Styles ─────────────────────────────────────────────────────────────
 function createStyles(theme: AppTheme) {
   const { colors, fonts, radius, spacing } = theme;
 
@@ -311,124 +243,7 @@ function createStyles(theme: AppTheme) {
       backgroundColor: colors.bgPrimary,
       flex: 1,
     },
-    pagePadding: {
-      flex: 1,
-      paddingHorizontal: spacing[5],
-      paddingTop: spacing[10],
-      paddingBottom: spacing[6],
-    },
-    accountContent: {
-      flex: 1,
-      justifyContent: "center",
-    },
-    accountTitle: {
-      color: colors.textPrimary,
-      fontFamily: fonts.displaySemiBold,
-      fontSize: 28,
-      lineHeight: 36,
-    },
-    accountSubtitle: {
-      color: colors.textSecondary,
-      fontFamily: fonts.body,
-      fontSize: 15,
-      lineHeight: 22,
-      marginTop: spacing[2],
-      marginBottom: spacing[4],
-    },
-    errorContainer: {
-      alignItems: "center",
-      backgroundColor: "#FDF2F0",
-      borderColor: colors.danger,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      flexDirection: "row",
-      gap: spacing[2],
-      marginBottom: spacing[3],
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[3],
-    },
-    errorText: {
-      color: colors.danger,
-      flex: 1,
-      fontFamily: fonts.bodyMedium,
-      fontSize: 13,
-      lineHeight: 18,
-    },
-    input: {
-      backgroundColor: colors.surfaceCard,
-      borderColor: colors.borderStrong,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      color: colors.textPrimary,
-      fontFamily: fonts.body,
-      fontSize: 15,
-      lineHeight: 22,
-      marginBottom: spacing[3],
-      minHeight: 54,
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
-    },
-    dietLabel: {
-      color: colors.textPrimary,
-      fontFamily: fonts.bodySemiBold,
-      fontSize: 15,
-      lineHeight: 22,
-      marginTop: spacing[4],
-      marginBottom: spacing[3],
-    },
-    dietRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: spacing[2],
-    },
-    dietChip: {
-      backgroundColor: colors.surfaceCard,
-      borderColor: colors.borderSubtle,
-      borderRadius: radius.pill,
-      borderWidth: 1,
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
-    },
-    dietChipActive: {
-      backgroundColor: colors.accentPrimary,
-      borderColor: colors.accentPrimary,
-    },
-    dietChipText: {
-      color: colors.textPrimary,
-      fontFamily: fonts.bodyMedium,
-      fontSize: 13,
-      lineHeight: 18,
-    },
-    dietChipTextActive: {
-      color: colors.textInverse,
-    },
-    accountCtaButton: {
-      alignItems: "center",
-      alignSelf: "center",
-      backgroundColor: colors.accentPrimary,
-      borderRadius: radius.xl,
-      height: 52,
-      justifyContent: "center",
-      width: "90%",
-    },
-    ctaSpacing: {
-      marginTop: "auto",
-    },
-    skipButton: {
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: 44,
-      paddingVertical: spacing[3],
-    },
-    skipText: {
-      color: colors.textSecondary,
-      fontFamily: fonts.bodyMedium,
-      fontSize: 14,
-      lineHeight: 18,
-    },
-    pressed: {
-      opacity: 0.8,
-    },
+    // ── Hero ──
     heroShell: {
       alignItems: "center",
       flex: 1,
@@ -502,9 +317,10 @@ function createStyles(theme: AppTheme) {
       fontSize: 15,
       lineHeight: 22,
       marginTop: spacing[2],
-      textAlign: "center",
       maxWidth: 280,
+      textAlign: "center",
     },
+    // ── Carousel ──
     carouselShell: {
       backgroundColor: colors.bgPrimary,
       flex: 1,
@@ -595,14 +411,15 @@ function createStyles(theme: AppTheme) {
       fontFamily: fonts.body,
       fontSize: 15,
       lineHeight: 22,
-      textAlign: "center",
       maxWidth: 320,
+      textAlign: "center",
     },
+    // ── Footer ──
     footer: {
       alignItems: "center",
       backgroundColor: colors.bgPrimary,
-      paddingHorizontal: spacing[6],
       paddingBottom: spacing[8],
+      paddingHorizontal: spacing[6],
       paddingTop: spacing[2],
     },
     progressRow: {
@@ -622,23 +439,17 @@ function createStyles(theme: AppTheme) {
       fontSize: 11,
     },
     dot: {
-      backgroundColor: colors.bgTertiary,
       borderRadius: radius.pill,
       height: 10,
-      width: 10,
-    },
-    dotActive: {
-      backgroundColor: colors.accentPrimary,
-      width: 24,
     },
     ctaButton: {
       alignItems: "center",
       backgroundColor: colors.accentPrimary,
       borderRadius: radius.xl,
-      height: 52,
-      justifyContent: "center",
       flexDirection: "row",
       gap: spacing[3],
+      height: 52,
+      justifyContent: "center",
       width: "100%",
     },
     ctaText: {
@@ -646,6 +457,9 @@ function createStyles(theme: AppTheme) {
       fontFamily: fonts.bodySemiBold,
       fontSize: 15,
       lineHeight: 22,
+    },
+    pressed: {
+      opacity: 0.8,
     },
   });
 }

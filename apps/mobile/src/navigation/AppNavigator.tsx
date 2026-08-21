@@ -22,6 +22,8 @@ import { CookingModeScreen } from "../screens/CookingModeScreen";
 import { DiscoverScreen } from "../screens/DiscoverScreen";
 import { MealPlannerScreen } from "../screens/MealPlannerScreen";
 import { OnboardingScreen } from "../screens/OnboardingScreen";
+import { CreateAccountScreen } from "../screens/CreateAccountScreen";
+import { LoginScreen } from "../screens/LoginScreen";
 import { PantryScreen } from "../screens/PantryScreen";
 import { EditProfileScreen } from "../screens/EditProfileScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -35,6 +37,8 @@ type RootStackParamList = {
   CookingMode: { recipeId: string };
   MealPlanner: undefined;
   Onboarding: undefined;
+  CreateAccount: undefined;
+  Login: undefined;
   EditProfile: undefined;
   Settings: undefined;
 };
@@ -94,7 +98,31 @@ export function AppNavigator({ theme }: AppNavigatorProps) {
           {({ navigation }) => (
             <OnboardingScreen
               theme={theme}
+              onFinish={() => navigation.replace("CreateAccount")}
+            />
+          )}
+        </RootStack.Screen>
+        <RootStack.Screen
+          name="CreateAccount"
+          options={{ animation: "slide_from_right" }}
+        >
+          {({ navigation }) => (
+            <CreateAccountScreen
+              theme={theme}
               onFinish={() => navigation.replace("MainTabs")}
+              onGoToLogin={() => navigation.replace("Login")}
+            />
+          )}
+        </RootStack.Screen>
+        <RootStack.Screen
+          name="Login"
+          options={{ animation: "slide_from_right" }}
+        >
+          {({ navigation }) => (
+            <LoginScreen
+              theme={theme}
+              onFinish={() => navigation.replace("MainTabs")}
+              onGoToCreateAccount={() => navigation.replace("CreateAccount")}
             />
           )}
         </RootStack.Screen>
