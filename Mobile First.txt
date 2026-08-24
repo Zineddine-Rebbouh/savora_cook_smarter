@@ -133,11 +133,16 @@ Animation: Logo scales from 0.8→1 with ease-spring, text fades in 200ms later
 Screen 1b — Value Prop Carousel (3 slides)
 
 Light mode. Background --bg-primary.
-Top 55% of screen: large illustration area (describe each as what it should show)
+Top 55% of screen: large illustration area. Use these image-generation prompts:
 
-Slide 1: A hand pasting a URL, with a structured recipe card materializing (parser feature)
-Slide 2: A pantry grid of ingredient chips, with "Cook Now" recipes appearing (zero-waste)
-Slide 3: A hands-free cooking step in full-screen dark mode (cooking experience)
+Slide 1 — "Cook smarter" (hands-free gesture cooking)
+Warm editorial food photography, moody dark kitchen setting, near-black charcoal background (#1a1512 tone), single warm terracotta/orange accent light source, shallow depth of field, cinematic side lighting, shot on 50mm lens, subtle film grain, minimal and modern composition with lots of negative space, premium cookbook aesthetic, no text, no logos. A close-up of a person's hand mid-gesture (swiping in the air, not touching anything) above a smartphone propped on a kitchen counter, steam rising from a pan in soft focus behind it, phone screen glowing warm orange, hand and gesture motion are the clear focal point, showing touchless interaction while cooking.
+
+Slide 2 — "Waste less" (smart pantry / expiry tracking)
+Warm editorial food photography, moody dark kitchen setting, near-black charcoal background (#1a1512 tone), single warm terracotta/orange accent light source, shallow depth of field, cinematic side lighting, shot on 50mm lens, subtle film grain, minimal and modern composition with lots of negative space, premium cookbook aesthetic, no text, no logos. Overhead shot of a wooden kitchen counter with fresh vegetables and a few pantry jars, one or two ingredients subtly highlighted with a soft orange glow as if "tracked" by the app, a phone lying flat nearby showing a faint UI glow, sense of freshness and organization, no clutter.
+
+Slide 3 — "Eat better" (personalized recipes / smart recommendations)
+Warm editorial food photography, moody dark kitchen setting, near-black charcoal background (#1a1512 tone), single warm terracotta/orange accent light source, shallow depth of field, cinematic side lighting, shot on 50mm lens, subtle film grain, minimal and modern composition with lots of negative space, premium cookbook aesthetic, no text, no logos. A beautifully plated finished dish on a dark ceramic plate, shot from a 45-degree angle, a phone in soft blur in the background showing a warm glowing screen, garnish and steam adding life to the shot, feels aspirational and appetizing, like a page out of a modern cookbook.
 
 
 Bottom 45%: feature title in Fraunces 32px, description in DM Sans 15px, progress dots
