@@ -2,7 +2,7 @@
 
 **Cook smarter. Waste less. Eat better.**
 
-Savora is a mobile-first cooking app built on a simple premise: cooking apps should be useful *in* the kitchen, not just pleasant to browse on a laptop. The core experience lives on the phone — import a recipe, match it against what's in your pantry, and cook hands-free while the screen stays awake and your hands stay busy.
+Savora is a mobile-first cooking app built on a simple premise: cooking apps should be useful *in* the kitchen, not just pleasant to browse on a laptop. The core experience lives on the phone , import a recipe, match it against what's in your pantry, and cook hands-free while the screen stays awake and your hands stay busy.
 
 <p align="center">
   <img src="apps/mobile/assets/home_ui.png" alt="Savora home screen" width="360" />
@@ -40,7 +40,7 @@ Most "recipe apps" are recipe *websites* wrapped in a mobile shell. Savora is de
 - The backend (Django + DRF + Channels) stays identical regardless of which client is talking to it.
 - Shipping Android-first shortens the iteration loop and avoids App Store review friction during early demos.
 
-Building a web app first would mean shipping the least differentiated version of the product. So the mobile app *is* the product — the web experience is a companion surface that comes later.
+Building a web app first would mean shipping the least differentiated version of the product. So the mobile app *is* the product , the web experience is a companion surface that comes later.
 
 ## Core Features
 
@@ -75,7 +75,7 @@ Building a web app first would mean shipping the least differentiated version of
 
 **Backend**
 - Django + Django REST Framework
-- Django Channels — realtime features
+- Django Channels , realtime features
 - Local-first sync model with background reconciliation
 
 **Web Companion** *(Phase 2)*
@@ -94,7 +94,7 @@ savora_cook_smarter/
 
 ## Getting Started
 
-> The project is in active early development — setup steps will be filled in as `apps/mobile` and `backend` reach a runnable state.
+> The project is in active early development , setup steps will be filled in as `apps/mobile` and `backend` reach a runnable state.
 
 ```bash
 # Clone the repo
@@ -142,4 +142,4 @@ Deeper design and planning docs live alongside the code as the project matures:
 
 ## License
 
-No license has been set for this repository yet — all rights reserved by default until one is added.
+No license has been set for this repository yet , all rights reserved by default until one is added.
