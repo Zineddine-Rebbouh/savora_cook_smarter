@@ -1,45 +1,121 @@
 # Savora
 
-Cook smarter. Waste less. Eat better.
+**Cook smarter. Waste less. Eat better.**
 
-Savora is a mobile-first cooking product built around the idea that the app should be useful in the kitchen, not just pleasant on a laptop. The core experience lives on the phone: import recipes, match them to pantry inventory, cook hands-free, and stay in flow while your screen stays awake and your hands stay busy.
+Savora is a mobile-first cooking app built on a simple premise: cooking apps should be useful *in* the kitchen, not just pleasant to browse on a laptop. The core experience lives on the phone — import a recipe, match it against what's in your pantry, and cook hands-free while the screen stays awake and your hands stay busy.
 
-![Home UI](apps/mobile/assets/home_ui.png)
+<p align="center">
+  <img src="apps/mobile/assets/home_ui.png" alt="Savora home screen" width="360" />
+</p>
 
-## Product Position
+<p align="center">
+  <img alt="Status" src="https://img.shields.io/badge/status-in%20development-orange" />
+  <img alt="Platform" src="https://img.shields.io/badge/platform-React%20Native%20%7C%20Expo-blue" />
+  <img alt="Backend" src="https://img.shields.io/badge/backend-Django%20%7C%20DRF%20%7C%20Channels-green" />
+</p>
 
-Savora is not a recipe website in app form. Its differentiated features are mobile-native:
+---
 
-- Hands-free cooking with voice and gesture support
-- Camera OCR for cookbook pages and receipts
-- Pantry scanning and structured ingredient tracking
-- Wake-lock cooking mode for live step-by-step guidance
-- Fast recipe capture from URLs, photos, dictation, and manual entry
+## Table of Contents
 
-If we build web first, we build the least differentiated version of the product first. The mobile app is the product. The web experience comes later as a companion surface.
+- [Why Savora](#why-savora)
+- [Core Features](#core-features)
+- [Platform Strategy](#platform-strategy)
+- [Tech Stack](#tech-stack)
+- [Repository Layout](#repository-layout)
+- [Getting Started](#getting-started)
+- [Build Roadmap](#build-roadmap)
+- [Documentation](#documentation)
+- [Status](#status)
+- [License](#license)
+
+---
+
+## Why Savora
+
+Most "recipe apps" are recipe *websites* wrapped in a mobile shell. Savora is designed the other way around: the differentiated value only exists because it's mobile-native.
+
+- The strongest features depend on device hardware and OS-level integrations (camera, voice, screen wake-lock).
+- A single React Native codebase covers iOS and Android, so the product logic isn't duplicated per platform.
+- The backend (Django + DRF + Channels) stays identical regardless of which client is talking to it.
+- Shipping Android-first shortens the iteration loop and avoids App Store review friction during early demos.
+
+Building a web app first would mean shipping the least differentiated version of the product. So the mobile app *is* the product — the web experience is a companion surface that comes later.
+
+## Core Features
+
+| Feature | Description |
+|---|---|
+| **Fast recipe capture** | Import recipes from URLs, photos, dictation, or manual entry |
+| **Camera OCR** | Digitize recipes straight from cookbook pages or receipts |
+| **Pantry tracking** | Structured inventory of what you actually have on hand |
+| **Smart matching** | Recipes matched against pantry contents automatically |
+| **Cooking Mode** | Wake-lock, step-by-step guidance so the screen never sleeps mid-recipe |
+| **Hands-free control** | Voice and gesture support for moving through steps without touching the phone |
 
 ## Platform Strategy
 
-### Phase 1
+**Phase 1 — Core product**
+- `apps/mobile` — primary product surface
+- `backend` — shared API and realtime infrastructure
 
-- `apps/mobile`: primary product surface
-- `backend`: shared API and realtime infrastructure
+**Phase 2 — Companion surfaces**
+- `apps/web` — landing page, account management, recipe-importer extension support
 
-### Phase 2
+## Tech Stack
 
-- `apps/web`: companion surfaces only
-  - landing page
-  - account management
-  - recipe importer extension support
+**Mobile**
+- React Native + Expo (TypeScript)
+- React Navigation — app shell and tab navigation
+- Zustand — app-level client state
+- TanStack Query — API sync and server cache
+- Expo SQLite — offline-first local storage
+- Expo Keep Awake — screen wake-lock during Cooking Mode
+- Reanimated — motion and transitions
 
-## Why Mobile First
+**Backend**
+- Django + Django REST Framework
+- Django Channels — realtime features
+- Local-first sync model with background reconciliation
 
-- The strongest features depend on device hardware and OS integrations.
-- React Native gives one client codebase for iOS and Android.
-- Django + DRF + Channels stays the same regardless of client platform.
-- Android-first delivery shortens iteration time and removes Apple submission friction during early demos.
+**Web Companion** *(Phase 2)*
+- Marketing site, account settings, and import-helper tooling
 
-## Initial Build Order
+## Repository Layout
+
+```
+savora_cook_smarter/
+├── apps/
+│   ├── mobile/          # React Native / Expo app — primary product surface
+│   └── web/             # Companion web surfaces (Phase 2)
+├── backend/             # Django + DRF + Channels API
+└── README.md
+```
+
+## Getting Started
+
+> The project is in active early development — setup steps will be filled in as `apps/mobile` and `backend` reach a runnable state.
+
+```bash
+# Clone the repo
+git clone https://github.com/Zineddine-Rebbouh/savora_cook_smarter.git
+cd savora_cook_smarter
+
+# Mobile app
+cd apps/mobile
+npm install
+npx expo start
+
+# Backend
+cd ../../backend
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python manage.py runserver
+```
+
+## Build Roadmap
+
+The mobile app is being built as a sequence of production-quality vertical slices, not throwaway prototypes:
 
 1. Recipe Detail Screen
 2. Home / Discovery Feed
@@ -52,52 +128,18 @@ If we build web first, we build the least differentiated version of the product 
 9. Profile + Cook Log
 10. Onboarding
 
-## Tech Direction
+## Documentation
 
-### Mobile
+Deeper design and planning docs live alongside the code as the project matures:
 
-- React Native
-- Expo
-- TypeScript
-- React Navigation for the app shell and tabs
-- Zustand for app-level client state
-- TanStack Query for API sync and server cache
-- Expo SQLite for offline-first local storage
-- Expo Keep Awake for cooking mode
-- Reanimated for motion and transitions
+- Savora Design Brief
+- Mobile-First Architecture
+- Build Sequence Roadmap
 
-### Backend
+## Status
 
-- Django
-- Django REST Framework
-- Django Channels
-- Local-first sync model with background reconciliation
+🚧 **Early development.** Product direction, design system, and architecture are defined; `apps/mobile` is being built out screen by screen starting with Recipe Detail.
 
-### Web Companion
+## License
 
-- Marketing site
-- Account settings
-- Import helpers and browser extension support
-
-## Repository Layout
-
-```text
-apps/
-  mobile/
-  web/
-backend/
-docs/
-  architecture/
-  product/
-  roadmap/
-```
-
-## Documents
-
-- [Savora Design Brief](C:/Users/mkrym/OneDrive/Documents/My%20Folders/My%20Profile/My%20Projects/get-recipe/docs/product/savora-design-brief.md)
-- [Mobile-First Architecture](C:/Users/mkrym/OneDrive/Documents/My%20Folders/My%20Profile/My%20Projects/get-recipe/docs/architecture/mobile-first-platform.md)
-- [Build Sequence Roadmap](C:/Users/mkrym/OneDrive/Documents/My%20Folders/My%20Profile/My%20Projects/get-recipe/docs/roadmap/build-sequence.md)
-
-## Next Build Step
-
-Stand up `apps/mobile` first and treat every early screen as a production-quality vertical slice, not a throwaway prototype.
+No license has been set for this repository yet — all rights reserved by default until one is added.
